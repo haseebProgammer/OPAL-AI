@@ -1,0 +1,9 @@
+Organ,Total_Transplants_Global,Living_Donor_Pct,Deceased_Donor_Pct,Avg_Wait_Years_US,Survival_Rate_1Y_Pct,Survival_Rate_5Y_Pct,Waiting_List_US,Can_Living_Donate,Common_Conditions,Description
+Kidney,110467,37.0,63.0,3.6,97.0,90.0,91395,Yes,"Chronic Kidney Disease, Diabetes, Hypertension, Polycystic Kidney Disease",Most commonly transplanted organ. One kidney can be donated by a living donor.
+Liver,42497,23.0,77.0,0.8,92.0,78.0,9053,Yes (partial),"Cirrhosis, Hepatitis B/C, Liver Cancer, Fatty Liver Disease",Second most transplanted organ. Living donors can donate a portion that regenerates.
+Heart,10287,0.0,100.0,0.5,88.0,77.0,3751,No,"Heart Failure, Cardiomyopathy, Coronary Artery Disease, Congenital Heart Defect",Only from deceased donors. Requires precise matching and rapid transport.
+Lung,8236,2.0,98.0,0.3,85.0,59.0,1068,Rare (lobar),"COPD, Pulmonary Fibrosis, Cystic Fibrosis, Pulmonary Hypertension",One of the most challenging transplants. Single or double lung possible.
+Pancreas,2066,0.5,99.5,1.5,88.0,73.0,868,Rare (partial),"Type 1 Diabetes, Chronic Pancreatitis",Often combined with kidney transplant for diabetic patients.
+Intestine,174,1.0,99.0,0.7,75.0,50.0,220,Rare,"Short Bowel Syndrome, Intestinal Failure, Crohn's Disease",Rarest organ transplant. Complex surgery with highest rejection risk.
+Cornea,185000,0.0,100.0,0.1,95.0,90.0,0,No,"Keratoconus, Corneal Scarring, Fuchs' Dystrophy",Most commonly transplanted tissue. Very high success rate.
+Bone Marrow / Stem Cells,95000,100.0,0.0,0.4,62.0,50.0,0,Yes,"Leukemia, Lymphoma, Sickle Cell Disease, Aplastic Anemia",Living donation through peripheral blood or bone marrow harvest.
