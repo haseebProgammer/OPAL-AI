@@ -100,7 +100,11 @@ export async function POST(request: NextRequest) {
       console.error("Welcome Email Sending Failed:", e);
     }
 
-    return NextResponse.json({ success: true, message: "Donor account created successfully." }, { status: 201 });
+    return NextResponse.json({ 
+      success: true, 
+      message: "Donor account created. Pending administrative approval.",
+      redirect: "/auth/pending-approval"
+    }, { status: 201 });
 
   } catch (error: any) {
     console.error("DONOR REGISTRATION ERROR:", error);

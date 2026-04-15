@@ -36,7 +36,6 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Public routes — always allow
   const publicRoutes = [
     '/auth/login',
     '/auth/donor/signup',
@@ -45,6 +44,7 @@ export async function proxy(request: NextRequest) {
     '/auth/reset-password',
     '/auth/verify-email',
     '/auth/role-select',
+    '/auth/pending-approval', // Allow pending screen
     '/',
   ];
 
@@ -58,7 +58,43 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Logged in — allow everything, proxy handles session
+  // Logged in — Check Approval for Dashboards
+  if (pathname.startsWith('/dashboard')) {
+    const role = user.user_metadata?.role;
+
+    // Admin always allowed
+    if (role === 'admin' || user.email === "ranahaseeb9427@gmail.com") {
+      return response;
+    }
+
+    // Check Donor Approval
+    if (role === 'donor') {
+      const { data } = await supabase
+        .from('blood_donors')
+        .select('approval_status')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (data?.approval_status !== 'approved') {
+        return NextResponse.redirect(new URL('/auth/pending-approval', request.url));
+      }
+    }
+
+    // Check Hospital Approval
+    if (role === 'hospital') {
+      const { data } = await supabase
+        .from('hospitals')
+        .select('approval_status')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (data?.approval_status !== 'approved') {
+        return NextResponse.redirect(new URL('/auth/pending-approval', request.url));
+      }
+    }
+  }
+
+  // Default: allow everything, proxy handles session
   return response;
 }
 

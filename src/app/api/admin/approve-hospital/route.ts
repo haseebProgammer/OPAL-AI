@@ -1,5 +1,5 @@
 import { createServerSupabase, getServiceSupabase } from "@/lib/supabase";
-import { sendHospitalWelcomeEmail } from "@/lib/mailer";
+import { sendApprovalEmail } from "@/lib/mailer";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
@@ -17,43 +17,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized: Admin access required" }, { status: 403 });
     }
 
-    const { hospital_id } = await request.json();
+    const { user_id, user_type, email, name } = await request.json();
 
-    if (!hospital_id) {
-      return NextResponse.json({ error: "Hospital ID is required" }, { status: 400 });
+    if (!user_id || !user_type) {
+      return NextResponse.json({ error: "User ID and Type are required" }, { status: 400 });
     }
 
-    // 1. Get hospital details
-    const { data: hospital, error: fetchError } = await adminClient
-      .from("hospitals")
-      .select("email, hospital_name")
-      .eq("hospital_id", hospital_id)
-      .single();
+    // 1. Determine target table
+    const table = user_type === 'hospital' 
+      ? 'hospitals' 
+      : (user_type === 'blood_donor' ? 'blood_donors' : 'organ_donors');
     
-    if (fetchError || !hospital) throw new Error("Hospital not found");
+    const idKey = user_type === 'hospital' ? 'id' : 'donor_id';
 
-    // 2. Update verification status
+    // 2. Update status in Database
     const { error: updateError } = await adminClient
-      .from("hospitals")
-      .update({ is_verified: true })
-      .eq("hospital_id", hospital_id);
+      .from(table)
+      .update({ 
+        approval_status: 'approved',
+        is_verified: true, // Legacy support
+        approved_at: new Date().toISOString()
+      })
+      .eq(idKey, user_id);
 
     if (updateError) throw updateError;
 
-    // 3. Notify Hospital (Direct and Reliable)
+    // 3. Send Success Email
     try {
-      await sendHospitalWelcomeEmail(hospital.email, hospital.hospital_name);
-    } catch (notifyError: any) {
-       console.error("Database updated but welcome email failed:", notifyError);
-       return NextResponse.json({ 
-         success: true, 
-         warning: "Hospital verified but notification email failed: " + notifyError.message 
-       });
+      await sendApprovalEmail(email, user_type.replace('_', ' '));
+    } catch (emailError) {
+      console.error("User approved but email failed:", emailError);
+      return NextResponse.json({ 
+        success: true, 
+        warning: "User approved in DB but notification email failed." 
+      });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: `${user_type} approved successfully.` });
   } catch (error: any) {
-    console.error("Approve Hospital API Error:", error);
+    console.error("ADMIN APPROVAL ERROR:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

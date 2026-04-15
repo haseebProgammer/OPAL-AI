@@ -119,8 +119,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<HospitalA
 
     return NextResponse.json({ 
       success: true, 
-      message: "Hospital application submitted and account activated.", 
-      userId 
+      message: "Hospital application submitted for review.", 
+      userId,
+      redirect: "/auth/pending-approval"
     }, { status: 201 });
 
   } catch (error: any) {

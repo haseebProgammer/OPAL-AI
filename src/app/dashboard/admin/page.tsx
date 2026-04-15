@@ -53,9 +53,30 @@ export default function AdminDashboard() {
   
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
 
+  const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+
   useEffect(() => {
     fetchStats();
+    fetchPendingApprovals();
   }, []);
+
+  const fetchPendingApprovals = async () => {
+    setIsDataLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('pending_approvals')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setPendingApprovals(data || []);
+    } catch (e: any) {
+      console.error("Failed to fetch pending approvals", e);
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -67,17 +88,27 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleApprove = async (id: string) => {
-    setIsActionLoading(id);
+  const handleApproveAction = async (item: any) => {
+    setIsActionLoading(item.user_id);
     try {
       const res = await fetch("/api/admin/approve-hospital", {
         method: "POST",
-        body: JSON.stringify({ hospital_id: id }),
+        body: JSON.stringify({ 
+          user_id: item.user_id, 
+          user_type: item.user_type,
+          email: item.email,
+          name: item.full_name
+        }),
       });
-      if (!res.ok) throw new Error("Failed to approve");
-      toast.success("Hospital approved successfully");
-      refetchHospitals();
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to approve");
+      
+      toast.success(`${item.full_name} approved successfully`);
+      fetchPendingApprovals();
       fetchStats();
+      if (item.user_type === 'hospital') refetchHospitals();
+      if (item.user_type === 'blood_donor') refetchBlood();
+      if (item.user_type === 'organ_donor') refetchOrgan();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -194,6 +225,113 @@ export default function AdminDashboard() {
           changeLabel="today"
         />
       </div>
+
+      {/* SECTION 2: Verification Center */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="glass-card rounded-[2rem] border border-border overflow-hidden"
+      >
+        <div className="p-8 border-b border-border flex items-center justify-between bg-muted/30">
+          <div className="flex items-center gap-4">
+             <div className="h-12 w-12 rounded-2xl bg-yellow-500/10 flex items-center justify-center">
+                <ShieldCheck className="h-6 w-6 text-yellow-500" />
+             </div>
+             <div>
+                <h3 className="text-xl font-black font-display tracking-tight text-foreground uppercase">Verification Center</h3>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Medical Credentials Queue</p>
+             </div>
+          </div>
+          <div className="px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-[10px] font-black uppercase tracking-widest">
+            {pendingApprovals.length} Applications Pending
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-muted/10">
+                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border">Entity Name</th>
+                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border">Type</th>
+                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border">Location</th>
+                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border">Submitted</th>
+                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border">Status</th>
+                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/50">
+              {isDataLoading ? (
+                <tr>
+                   <td colSpan={6} className="p-20 text-center">
+                      <div className="flex flex-col items-center gap-4">
+                         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                         <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Syncing Verification Queue...</p>
+                      </div>
+                   </td>
+                </tr>
+              ) : pendingApprovals.length === 0 ? (
+                <tr>
+                   <td colSpan={6} className="p-20 text-center">
+                      <div className="flex flex-col items-center gap-4 opacity-30">
+                         <Check className="w-12 h-12 text-green-500" />
+                         <p className="text-sm font-bold text-foreground italic underline decoration-primary decoration-4">All Clear. No Pending Applications.</p>
+                      </div>
+                   </td>
+                </tr>
+              ) : (
+                pendingApprovals.map((item) => (
+                  <tr key={item.user_id} className="hover:bg-muted/5 transition-colors group">
+                    <td className="p-6">
+                       <div className="font-bold text-foreground">{item.full_name}</div>
+                       <div className="text-xs text-muted-foreground">{item.email}</div>
+                    </td>
+                    <td className="p-6">
+                       <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter border ${
+                         item.user_type === 'hospital' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
+                       }`}>
+                         {item.user_type.replace('_', ' ')}
+                       </span>
+                    </td>
+                    <td className="p-6 text-sm font-bold text-muted-foreground">{item.city}</td>
+                    <td className="p-6 text-xs font-medium text-muted-foreground">
+                       {new Date(item.created_at).toLocaleDateString(undefined, {
+                         month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                       })}
+                    </td>
+                    <td className="p-6">
+                       <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                          <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest">Pending</span>
+                       </div>
+                    </td>
+                    <td className="p-6 text-right">
+                       <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={() => handleApproveAction(item)}
+                            disabled={isActionLoading === item.user_id}
+                            className="h-10 px-4 rounded-xl bg-green-500 text-white flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-green-500/20 disabled:opacity-50"
+                          >
+                             {isActionLoading === item.user_id ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
+                             <span className="text-xs font-black uppercase tracking-widest hidden sm:inline">Approve</span>
+                          </button>
+                          <button 
+                            onClick={() => handleReject(item.user_id)}
+                            disabled={isActionLoading === item.user_id}
+                            className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all"
+                          >
+                             <X className="w-4 h-4" />
+                          </button>
+                       </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card p-8 rounded-3xl border border-border space-y-4">
               <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">

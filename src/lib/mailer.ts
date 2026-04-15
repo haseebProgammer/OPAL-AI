@@ -169,6 +169,37 @@ export async function sendHospitalRejectionEmail(toEmail: string, hospitalName: 
     });
 }
 
+export async function sendApprovalEmail(toEmail: string, userType: string) {
+    await transporter.sendMail({
+      from: DEFAULT_FROM,
+      to: toEmail,
+      subject: "✅ Your OPAL-AI Account is Approved!",
+      html: getTemplate("Account Approved!", `
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div style="background: rgba(34, 197, 94, 0.1); width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(34, 197, 94, 0.3); margin: 0 auto;">
+            <span style="font-size: 32px;">✅</span>
+          </div>
+        </div>
+
+        <p style="color: #ffffff; font-size: 16px; margin-bottom: 20px; text-align: center; font-weight: 700;">Congratulations!</p>
+        
+        <p style="color: #9ca3af; line-height: 1.6; text-align: center; margin-bottom: 32px;">
+          Your ${userType} account has been verified and approved by the OPAL-AI clinical administration team. You now have full access to our life-saving logistics platform.
+        </p>
+
+        <div style="text-align: center; margin-bottom: 32px;">
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/auth/login" style="background: #DC2626; color: #ffffff; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.39);">
+            Login to Dashboard
+          </a>
+        </div>
+
+        <p style="color: #4b5563; font-size: 11px; text-align: center;">
+          Always ensure your clinical data is up-to-date to maintain network integrity.
+        </p>
+      `, "OPAL-AI — Saving Lives Through Technology")
+    });
+}
+
 function getTemplate(title: string, content: string, footer: string) {
     return `
     <!DOCTYPE html>

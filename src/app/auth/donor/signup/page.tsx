@@ -145,6 +145,11 @@ export default function DonorSignupPage() {
         throw new Error(result.error || "Failed to register donor");
       }
       
+      if (result.success) {
+        toast.success("Registration success! Redirecting to verification...");
+        router.push("/auth/pending-approval");
+      }
+      
       localStorage.setItem("pending-verify-email", data.email);
       localStorage.removeItem("donor-draft");
       setSubmissionSuccess(true);

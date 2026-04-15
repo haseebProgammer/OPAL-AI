@@ -98,7 +98,10 @@ export default function HospitalSignupPage() {
         throw new Error(result.error || "Registration failed");
       }
 
-      setSubmissionSuccess(true);
+      if (result.success) {
+        toast.success("Application submitted! Redirecting to verification center...");
+        router.push("/auth/pending-approval");
+      }
       reset();
     } catch (err: any) {
       console.error("HOSPITAL_SIGNUP_ERROR:", err);
