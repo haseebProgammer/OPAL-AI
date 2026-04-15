@@ -1,4 +1,5 @@
 import { createServerSupabase, getServiceSupabase } from "@/lib/supabase";
+import { sendHospitalWelcomeEmail } from "@/lib/mailer";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
@@ -39,20 +40,15 @@ export async function POST(request: Request) {
 
     if (updateError) throw updateError;
 
-    // 3. Notify Hospital
-    const origin = request.headers.get("origin") || "http://localhost:3000";
+    // 3. Notify Hospital (Direct and Reliable)
     try {
-      await fetch(`${origin}/api/auth/notify-hospital`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: hospital.email,
-          hospital_name: hospital.hospital_name,
-          status: "approved"
-        })
-      });
-    } catch (notifyError) {
-       console.error("Hospital notified but API call failed", notifyError);
+      await sendHospitalWelcomeEmail(hospital.email, hospital.hospital_name);
+    } catch (notifyError: any) {
+       console.error("Database updated but welcome email failed:", notifyError);
+       return NextResponse.json({ 
+         success: true, 
+         warning: "Hospital verified but notification email failed: " + notifyError.message 
+       });
     }
 
     return NextResponse.json({ success: true });

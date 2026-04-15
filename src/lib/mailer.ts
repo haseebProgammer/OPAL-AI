@@ -124,6 +124,51 @@ export async function sendHospitalRegistrationEmail(toEmail: string, hospitalNam
     });
 }
 
+export async function sendHospitalWelcomeEmail(toEmail: string, hospitalName: string) {
+    await transporter.sendMail({
+      from: DEFAULT_FROM,
+      to: toEmail,
+      subject: "Welcome to the OPAL-AI Clinical Network!",
+      html: getTemplate("Credentials Verified ✅", `
+        <p style="color: #ffffff; font-size: 16px; margin-bottom: 20px;">Dear Administrator at ${hospitalName},</p>
+        <p style="color: #9ca3af; line-height: 1.6; margin-bottom: 24px;">
+            We are pleased to inform you that your institutional credentials have been verified. Your hospital is now an authorized partner in our national life-saving network.
+        </p>
+        
+        <div style="background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2); padding: 24px; border-radius: 16px; margin-bottom: 24px; text-align: center;">
+            <p style="color: #22c55e; font-weight: 900; font-size: 18px; margin: 0; text-transform: uppercase; letter-spacing: 0.1em;">Institutional Access Activated</p>
+        </div>
+
+        <p style="color: #9ca3af; line-height: 1.6;">
+            You can now log in to the hospital dashboard to access high-precision AI matching, view donor maps, and initiate procurement requests.
+        </p>
+      `, "Clinical Partnership Established")
+    });
+}
+
+export async function sendHospitalRejectionEmail(toEmail: string, hospitalName: string, reason: string) {
+    await transporter.sendMail({
+      from: DEFAULT_FROM,
+      to: toEmail,
+      subject: "Application Status Update | OPAL-AI Clinical Network",
+      html: getTemplate("Application Update", `
+        <p style="color: #ffffff; font-size: 16px; margin-bottom: 20px;">Regarding your application for ${hospitalName},</p>
+        <p style="color: #9ca3af; line-height: 1.6; margin-bottom: 24px;">
+            Thank you for your interest in joining the OPAL-AI network. After reviewing the documentation provided, we are unable to approve your institutional access at this time.
+        </p>
+        
+        <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); padding: 24px; border-radius: 16px; margin-bottom: 24px;">
+            <p style="color: #ef4444; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Decline Reason</p>
+            <p style="color: #ffffff; font-size: 14px; font-style: italic; margin: 0;">&quot;${reason}&quot;</p>
+        </div>
+
+        <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">
+            If you wish to appeal this decision or have corrected registration documents, please reply to this email or re-register with updated credentials.
+        </p>
+      `, "Administrative Protocol Review Complete")
+    });
+}
+
 function getTemplate(title: string, content: string, footer: string) {
     return `
     <!DOCTYPE html>

@@ -1,4 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase";
+import { sendHospitalRejectionEmail } from "@/lib/mailer";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -33,17 +34,16 @@ export async function POST(request: Request) {
 
     if (deleteError) throw deleteError;
 
-    // 3. Notify
-    const origin = request.headers.get("origin") || "http://localhost:3000";
-    await fetch(`${origin}/api/auth/notify-hospital`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: hospital.email,
-        hospital_name: hospital.hospital_name,
-        status: "rejected"
-      })
-    });
+    // 3. Notify (Reliable email)
+    try {
+      await sendHospitalRejectionEmail(
+        hospital.email, 
+        hospital.hospital_name, 
+        "The institutional license or credentials provided could not be verified by our medical board."
+      );
+    } catch (e: any) {
+      console.error("DB update worked but rejection email failed:", e);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
