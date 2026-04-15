@@ -34,7 +34,7 @@ import { Hospital, Donor } from "@/lib/types";
 interface AdminStats {
   totalDonors: number;
   totalHospitals: number;
-  pendingHospitals: number;
+  pendingApprovals: number;
   totalMatches: number;
 }
 
@@ -97,6 +97,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch("/api/admin/approve-hospital", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           user_id: item.user_id, 
           user_type: item.user_type,
@@ -126,6 +127,7 @@ export default function AdminDashboard() {
     try {
       const res = await fetch("/api/admin/reject-hospital", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hospital_id: id }),
       });
       if (!res.ok) throw new Error("Failed to reject");
@@ -249,10 +251,10 @@ export default function AdminDashboard() {
         />
         <StatsCard 
           label="Pending Approvals" 
-          value={stats?.pendingHospitals || 0} 
+          value={stats?.pendingApprovals || 0} 
           icon="activity" 
           delay={0.1}
-          change={stats?.pendingHospitals ? -100 : 0}
+          change={stats?.pendingApprovals ? -100 : 0}
           changeLabel="needs action"
         />
         <StatsCard 
@@ -278,13 +280,16 @@ export default function AdminDashboard() {
                 <ShieldCheck className="h-6 w-6 text-yellow-500" />
              </div>
              <div>
-                <h3 className="text-xl font-black font-display tracking-tight text-foreground uppercase">Verification Center</h3>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Medical Credentials Queue</p>
+                <h3 className="text-xl font-black font-display tracking-tight text-foreground uppercase">Verification Queue</h3>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Medical Credentials Registry</p>
              </div>
           </div>
-          <div className="px-4 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-[10px] font-black uppercase tracking-widest">
-            {pendingApprovals.length} Applications Pending
-          </div>
+          <button 
+             onClick={() => router.push('/dashboard/admin/approvals')}
+             className="px-6 py-2 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-primary/20"
+          >
+             Open Verification Center
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -321,7 +326,7 @@ export default function AdminDashboard() {
                 </tr>
               ) : (
                 pendingApprovals.map((item) => (
-                  <tr key={item.user_id} className="hover:bg-muted/5 transition-colors group">
+                  <tr key={item.id} className="hover:bg-muted/5 transition-colors group">
                     <td className="p-6">
                        <div className="font-bold text-foreground">{item.full_name}</div>
                        <div className="text-xs text-muted-foreground">{item.email}</div>
@@ -349,15 +354,15 @@ export default function AdminDashboard() {
                        <div className="flex items-center justify-end gap-2">
                           <button 
                             onClick={() => handleApproveAction(item)}
-                            disabled={isActionLoading === item.user_id}
+                            disabled={isActionLoading === item.id}
                             className="h-10 px-4 rounded-xl bg-green-500 text-white flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-green-500/20 disabled:opacity-50"
                           >
-                             {isActionLoading === item.user_id ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
+                             {isActionLoading === item.id ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-4 h-4" />}
                              <span className="text-xs font-black uppercase tracking-widest hidden sm:inline">Approve</span>
                           </button>
                           <button 
-                            onClick={() => handleReject(item.user_id)}
-                            disabled={isActionLoading === item.user_id}
+                            onClick={() => handleReject(item.id)}
+                            disabled={isActionLoading === item.id}
                             className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all"
                           >
                              <X className="w-4 h-4" />

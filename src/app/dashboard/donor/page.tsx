@@ -36,10 +36,17 @@ export default function DonorDashboard() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       const userRole = user?.user_metadata?.role;
-      setRole(userRole);
+      const isAdmin = userRole === "admin" || user?.email === "ranahaseeb9427@gmail.com";
+      setRole(isAdmin ? "admin" : userRole);
       
-      if (!userRole || (userRole !== "donor" && userRole !== "admin")) {
+      if (!userRole && !isAdmin) {
         router.push("/dashboard");
+        return;
+      }
+
+      if (!isAdmin && userRole !== "donor") {
+        router.push("/dashboard");
+        return;
       }
       setAuthLoading(false);
     }
@@ -222,6 +229,31 @@ export default function DonorDashboard() {
                 You will receive alerts here when a hospital attempts to match with your profile.
             </p>
         </div>
+      </div>
+    </div>
+      {/* Danger Zone */}
+      <div className="mt-12 p-8 rounded-[2rem] bg-red-500/5 border border-red-500/10 space-y-4">
+        <div>
+          <h3 className="text-lg font-bold text-red-500 uppercase tracking-tight">Danger Zone</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Once you delete your account, there is no going back. All clinical records and donation history will be permanently erased.
+          </p>
+        </div>
+        <button 
+           onClick={async () => {
+             if(confirm("Are you absolutely sure? This will PERMANENTLY delete your OPAL-AI clinical donor profile.")) {
+               const res = await fetch('/api/auth/delete-account', { method: 'DELETE' });
+               if(res.ok) {
+                 window.location.href = '/';
+               } else {
+                 alert("Access Denied: Could not purge account.");
+               }
+             }
+           }}
+           className="px-6 py-3 rounded-xl bg-red-500 text-white text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+        >
+          Purge Clinical Identity
+        </button>
       </div>
     </div>
   );

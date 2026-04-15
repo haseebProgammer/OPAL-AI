@@ -17,18 +17,28 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized access. Admins only." }, { status: 403 });
     }
 
-    // Bypass RLS using admin client
-    const [bloodRes, organRes] = await Promise.all([
-      adminClient.from("blood_donors").select("*").order("created_at", { ascending: false }),
-      adminClient.from("organ_donors").select("*").order("created_at", { ascending: false }),
-    ]);
+    // Fetch from central donors table which has CNIC
+    const { data: allDonors, error: donorError } = await adminClient
+      .from("donors")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    if (bloodRes.error) throw bloodRes.error;
-    if (organRes.error) throw organRes.error;
+    if (donorError) throw donorError;
+
+    // Filter into categories expected by the UI
+    const bloodDonors = allDonors?.filter(d => d.is_blood_donor) || [];
+    const organDonors = allDonors?.filter(d => d.is_organ_donor) || [];
+
+    // Map fields to match UI expectations (full_name, is_available etc)
+    const mapDonor = (d: any) => ({
+      ...d,
+      full_name: `${d.first_name} ${d.last_name}`,
+      is_available: d.status === 'active' || d.status === 'verified',
+    });
 
     return NextResponse.json({
-      bloodDonors: bloodRes.data || [],
-      organDonors: organRes.data || [],
+      bloodDonors: bloodDonors.map(mapDonor),
+      organDonors: organDonors.map(mapDonor),
     });
 
   } catch (error: any) {

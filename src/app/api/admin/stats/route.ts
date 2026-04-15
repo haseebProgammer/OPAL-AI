@@ -16,19 +16,19 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Use service client for stats to ensure full visibility
-    const [bloodCount, organCount, hospitalTotal, hospitalPending, matchesCount] = await Promise.all([
-      adminClient.from("blood_donors").select("*", { count: "exact", head: true }),
-      adminClient.from("organ_donors").select("*", { count: "exact", head: true }),
+    // Unified Stats Logic
+    const [donorsTotal, donorsPending, hospitalTotal, hospitalPending, matchesCount] = await Promise.all([
+      adminClient.from("donors").select("*", { count: "exact", head: true }),
+      adminClient.from("donors").select("*", { count: "exact", head: true }).eq("status", "pending"),
       adminClient.from("hospitals").select("*", { count: "exact", head: true }),
       adminClient.from("hospitals").select("*", { count: "exact", head: true }).eq("is_verified", false),
       adminClient.from("match_results").select("*", { count: "exact", head: true }),
     ]);
 
     return NextResponse.json({
-      totalDonors: (bloodCount.count || 0) + (organCount.count || 0),
+      totalDonors: donorsTotal.count || 0,
       totalHospitals: hospitalTotal.count || 0,
-      pendingHospitals: hospitalPending.count || 0,
+      pendingApprovals: (donorsPending.count || 0) + (hospitalPending.count || 0),
       totalMatches: matchesCount.count || 0,
     });
   } catch (error: any) {

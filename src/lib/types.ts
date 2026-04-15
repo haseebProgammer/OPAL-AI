@@ -80,10 +80,12 @@ export interface OrganDonorRow {
   smoker: boolean;
   height_cm: number;
   weight_kg: number;
-  is_living_donor: boolean;
-  next_of_kin_name: string;
+  // Organ Specific Medical Fields
+  hiv_status: VerificationStatus;
+  hepatitis_status: VerificationStatus;
+  smoking_history: boolean;
+  medical_report_url?: string;
   next_of_kin_contact: string;
-  consent_given: boolean;
   city: string;
   latitude: number | null;
   longitude: number | null;

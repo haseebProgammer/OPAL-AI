@@ -18,7 +18,9 @@ import {
   Droplet,
   AlertTriangle,
   Send,
-  Loader2
+  Loader2,
+  Search,
+  Building2
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -86,13 +88,75 @@ export default function AdminDonorsPage() {
     }
   };
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCity, setSelectedCity] = useState("all");
+  const [selectedBlood, setSelectedBlood] = useState("all");
+
   const combinedDonors = [
     ...(bloodDonors || []).map(d => ({ ...d, type: 'blood' as const })),
     ...(organDonors || []).map(d => ({ ...d, type: 'organ' as const }))
   ].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+  // Filter Logic
+  const filteredDonors = combinedDonors.filter(d => {
+    const matchesSearch = d.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          d.id?.includes(searchQuery) || 
+                          d.cnic?.includes(searchQuery);
+    const matchesCity = selectedCity === "all" || d.city?.toLowerCase() === selectedCity.toLowerCase();
+    const matchesBlood = selectedBlood === "all" || d.blood_type === selectedBlood;
+    return matchesSearch && matchesCity && matchesBlood;
+  });
+
+  const allCities = Array.from(new Set(combinedDonors.map(d => d.city).filter(Boolean)));
+  const allBloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-6 pb-20">
+      {/* Header & Controls */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-black font-display tracking-tight text-foreground">Donor Directory</h1>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" /> {filteredDonors.length} Verified Nodes Online
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+            <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <input 
+                    type="text" 
+                    placeholder="Search name, CNIC or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-2.5 bg-muted/20 border border-border rounded-xl text-sm focus:ring-4 focus:ring-primary/10 outline-none w-64 transition-all"
+                />
+            </div>
+            
+            <select 
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="px-4 py-2.5 bg-muted/20 border border-border rounded-xl text-sm focus:ring-4 focus:ring-primary/10 outline-none appearance-none cursor-pointer hover:bg-muted font-bold min-w-[140px]"
+            >
+                <option value="all">All Cities</option>
+                {allCities.map(city => (
+                    <option key={city as string} value={city as string}>{city as string}</option>
+                ))}
+            </select>
+
+            <select 
+                value={selectedBlood}
+                onChange={(e) => setSelectedBlood(e.target.value)}
+                className="px-4 py-2.5 bg-muted/20 border border-border rounded-xl text-sm focus:ring-4 focus:ring-primary/10 outline-none appearance-none cursor-pointer hover:bg-muted font-bold"
+            >
+                <option value="all">All Blood Groups</option>
+                {allBloodTypes.map(bt => (
+                    <option key={bt} value={bt}>{bt}</option>
+                ))}
+            </select>
+        </div>
+      </div>
+
       <div className="glass-card rounded-3xl border border-border shadow-2xl shadow-primary/5 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -108,7 +172,7 @@ export default function AdminDonorsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {combinedDonors.map((d, i) => (
+              {filteredDonors.map((d, i) => (
                 <motion.tr 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -129,7 +193,7 @@ export default function AdminDonorsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-1">
-                      <p className="text-xs font-mono font-bold text-foreground bg-muted/50 px-2 py-0.5 rounded-md inline-block">{d.cnic || "---"}</p>
+                      <p className="text-xs font-mono font-bold text-foreground bg-muted/50 px-2 py-0.5 rounded-md inline-block">{(d as any).cnic || (d as any).id_card_number || "---"}</p>
                       <p className="text-[9px] text-muted-foreground font-black uppercase tracking-tighter">ID: {d.id.slice(0, 8)}</p>
                     </div>
                   </td>
@@ -149,9 +213,9 @@ export default function AdminDonorsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
                        <Phone className="h-3 w-3" />
-                       {d.contact_number}
+                       {(d as any).contact_number || (d as any).phone || "---"}
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -244,11 +308,11 @@ export default function AdminDonorsPage() {
                        <div className="space-y-3">
                           <div className="flex justify-between items-center py-2 border-b border-border/50">
                              <span className="text-xs font-bold text-muted-foreground">CNIC Number</span>
-                             <span className="text-sm font-mono font-bold text-foreground">{selectedDonor.cnic || "---"}</span>
+                             <span className="text-sm font-mono font-bold text-foreground">{(selectedDonor as any).cnic || (selectedDonor as any).id_card_number || "---"}</span>
                           </div>
                           <div className="flex justify-between items-center py-2 border-b border-border/50">
                              <span className="text-xs font-bold text-muted-foreground">Contact Num</span>
-                             <span className="text-sm font-bold text-foreground">{selectedDonor.contact_number}</span>
+                             <span className="text-sm font-bold text-foreground">{(selectedDonor as any).contact_number || (selectedDonor as any).phone || "---"}</span>
                           </div>
                           <div className="flex justify-between items-center py-2 border-b border-border/50">
                              <span className="text-xs font-bold text-muted-foreground">Blood Type</span>

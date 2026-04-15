@@ -83,6 +83,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HospitalA
       admin_name: data.admin_name,
       designation: data.designation,
       is_verified: false, // Must be approved by Super Admin per SRS medical protocol
+      approval_status: 'pending', // SET STATUS FOR ADMIN QUEUE
       created_at: new Date().toISOString()
     }]);
 

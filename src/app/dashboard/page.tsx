@@ -35,13 +35,11 @@ export default function DashboardPage() {
           donor: "/dashboard/donor", 
         };
 
+        // If the user already has a preferred view in state or we are just landing,
+        // redirect to their default home.
         const targetPath = isAdminEmail ? "/dashboard/admin" : (detectedRole ? redirectMap[detectedRole as keyof typeof redirectMap] : "/dashboard/donor");
 
-        
-        // Force full location change to refresh server session
-        setTimeout(() => {
-          window.location.href = targetPath || "/dashboard/donor";
-        }, 1000);
+        router.replace(targetPath || "/dashboard/donor");
       } catch (error) {
         console.error("Redirection error:", error);
         router.push("/auth/login");

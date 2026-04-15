@@ -1,8 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart,
@@ -64,7 +64,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const collapsed = !isOpen;
 
-  useState(() => {
+  useEffect(() => {
     async function loadUser() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -74,7 +74,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
       }
     }
     loadUser();
-  });
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -104,7 +104,6 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -147,7 +146,6 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           </Link>
         </div>
 
-        {/* ... Rest of Sidebar content ... */}
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
           {navItems.map((item) => {
@@ -195,9 +193,16 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                 { href: "/dashboard/donor", label: "Donor View", icon: User },
                 { href: "/dashboard/admin", label: "Admin View", icon: ShieldCheck },
               ].map(r => (
-                 <Link key={r.href} href={r.href} className={cn("flex items-center gap-2 rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-tight transition-colors", pathname.startsWith(r.href) ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground")}>
+                 <button 
+                   key={r.href} 
+                   onClick={() => { window.location.href = r.href; }}
+                   className={cn(
+                     "flex items-center gap-2 rounded-lg px-3 py-2 text-[10px] font-bold uppercase tracking-tight transition-all w-full text-left",
+                     pathname.startsWith(r.href) ? "text-primary bg-primary/20 shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                   )}
+                 >
                    <r.icon className="h-3.5 w-3.5" /> {r.label}
-                 </Link>
+                 </button>
               ))}
             </div>
           </div>
@@ -222,7 +227,6 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           )}
         </div>
 
-        {/* Collapse Toggle (Desktop only) */}
         <button
           onClick={onToggle}
           className="absolute -right-3 top-20 hidden md:flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm hover:text-foreground transition-colors"

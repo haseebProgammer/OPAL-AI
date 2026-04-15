@@ -107,25 +107,35 @@ export default function HospitalDashboard() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       const userRole = user?.user_metadata?.role;
-      setRole(userRole);
+      const isAdmin = userRole === "admin" || user?.email === "ranahaseeb9427@gmail.com";
+      setRole(isAdmin ? "admin" : userRole);
       
-      if (!userRole || (userRole !== "hospital" && userRole !== "admin")) {
+      if (!userRole && !isAdmin) {
+        router.push("/dashboard");
+        return;
+      }
+
+      if (!isAdmin && userRole !== "hospital") {
         router.push("/dashboard");
         return;
       }
       
       if (userRole === "hospital") {
+        // Always check DB directly — never trust stale session metadata
         const { data: hospitalData } = await supabase
           .from("hospitals")
           .select("is_verified")
           .eq("user_id", user?.id)
-          .single();
-          
-        if (hospitalData && !hospitalData.is_verified) {
-          setIsVerified(false);
-        } else {
-          setIsVerified(true);
+          .maybeSingle();
+
+        // Only block if record exists AND explicitly not verified
+        if (hospitalData && hospitalData.is_verified === false) {
+          router.replace("/auth/pending-approval");
+          return;
         }
+        
+        // is_verified is true OR no record found yet — let them in
+        setIsVerified(true);
       } else {
         setIsVerified(true); // admin is immune
       }
@@ -192,12 +202,26 @@ export default function HospitalDashboard() {
             For security reasons, access to the Neural Matching Engine is restricted until your medical licenses are validated.
           </p>
         </div>
-        <div className="p-4 bg-muted/40 rounded-xl border border-border w-full flex items-start gap-3 text-left">
-          <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-foreground">Estimated Wait Time: 24-48 Hours</p>
-            <p className="text-xs text-muted-foreground mt-1">Our team will contact you via email once approved.</p>
-          </div>
+        <div className="flex flex-col gap-3 w-full">
+            <div className="p-4 bg-muted/40 rounded-xl border border-border w-full flex items-start gap-3 text-left">
+                <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div>
+                    <p className="text-sm font-bold text-foreground">Estimated Wait Time: 24-48 Hours</p>
+                    <p className="text-xs text-muted-foreground mt-1">Our team will contact you via email once approved.</p>
+                </div>
+            </div>
+            
+            <button 
+                onClick={async () => {
+                    if(confirm("Cancel registration and delete all submitted data?")) {
+                        const res = await fetch('/api/auth/delete-account', { method: 'DELETE' });
+                        if(res.ok) window.location.href = '/';
+                    }
+                }}
+                className="text-xs font-bold text-muted-foreground hover:text-red-500 transition-colors uppercase tracking-widest mt-4"
+            >
+                Retract Application & Delete Account
+            </button>
         </div>
       </div>
     );
@@ -357,6 +381,34 @@ export default function HospitalDashboard() {
             </div>
           </div>
 
+        </div>
+      </div>
+
+       {/* Danger Zone */}
+       <div className="mt-12 p-8 rounded-[2.5rem] bg-red-500/5 border border-red-500/10 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="max-w-xl">
+            <h3 className="text-xl font-bold text-red-500 font-display">Hospital Decommissioning</h3>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+              Permanent network logout. This actions will revoke all medical licenses, delete the institutional identity, and erase diagnostic match logs. This action cannot be undone.
+            </p>
+          </div>
+          <button 
+             onClick={async () => {
+               if(confirm("CRITICAL WARNING: This will PERMANENTLY delete your Hospital's OPAL-AI credentials and clinical data. Proceed?")) {
+                 const res = await fetch('/api/auth/delete-account', { method: 'DELETE' });
+                 if(res.ok) {
+                   toast.success("Identity Purged. Network Connection Closed.");
+                   setTimeout(() => window.location.href = '/', 1500);
+                 } else {
+                   toast.error("Security Bypass Failed: Could not delete account.");
+                 }
+               }
+             }}
+             className="px-8 py-4 rounded-2xl bg-red-500 text-white text-xs font-black uppercase tracking-[0.2em] hover:bg-red-600 transition-all shadow-xl shadow-red-500/20 active:scale-95"
+          >
+            Decommission Facility
+          </button>
         </div>
       </div>
     </div>

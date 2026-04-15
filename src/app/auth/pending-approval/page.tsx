@@ -1,10 +1,69 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, Mail, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Clock, Mail, ShieldCheck, ArrowLeft, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PendingApprovalPage() {
+  const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const { createClient } = await import("@/lib/supabase");
+        const supabase = createClient();
+        
+        // Force refresh the session to get latest metadata
+        await supabase.auth.refreshSession();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsChecking(false);
+          return;
+        }
+
+        const role = user.user_metadata?.role;
+
+        if (role === 'hospital') {
+          // Check DB directly — do not trust stale session
+          const { data } = await supabase
+            .from('hospitals')
+            .select('is_verified')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (data?.is_verified === true) {
+             router.push('/dashboard/hospital');
+             return;
+          }
+        } else if (role === 'donor') {
+          const { data } = await supabase
+            .from('donors')
+            .select('status')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (data?.status === 'active' || data?.status === 'verified') {
+             router.push('/dashboard/donor');
+             return;
+          }
+        } else if (role === 'admin') {
+          router.push('/dashboard/admin');
+          return;
+        }
+      } catch (e) {
+        console.error("Status check failed", e);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000);
+    return () => clearInterval(interval);
+  }, [router]);
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
       
@@ -88,6 +147,13 @@ export default function PendingApprovalPage() {
             </div>
 
             <div className="flex flex-col gap-4">
+               {isChecking && (
+                  <div className="flex items-center justify-center gap-2 mb-2 animate-pulse">
+                     <div className="w-1 h-1 rounded-full bg-primary" />
+                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Checking verification status...</span>
+                  </div>
+               )}
+
                <Link
                 href="/"
                 className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
@@ -95,6 +161,20 @@ export default function PendingApprovalPage() {
                 <ArrowLeft className="w-4 h-4" />
                 Return to Portal
               </Link>
+
+              <button
+                onClick={async () => {
+                  const { createClient } = await import("@/lib/supabase");
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  window.location.href = "/auth/login";
+                }}
+                className="w-full py-3 rounded-2xl border-2 border-primary/20 text-xs font-black uppercase tracking-widest hover:bg-primary/5 transition-all text-primary flex items-center justify-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out / Switch Account
+              </button>
+
               <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">
                 Need help? <a href="mailto:support@opal-ai.org" className="text-primary hover:underline">Contact Support</a>
               </div>

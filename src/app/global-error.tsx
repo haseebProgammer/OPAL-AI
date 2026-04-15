@@ -1,8 +1,7 @@
 "use client";
 
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
-import { ThemeProvider } from "@/providers/ThemeProvider";
-import { ShieldAlert, RefreshCcw } from "lucide-react";
+  import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+  import { ShieldAlert, RefreshCcw } from "lucide-react";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
@@ -16,9 +15,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jakarta.variable}`}>
-      <body className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
-        <ThemeProvider>
+    <html lang="en" className={`${inter.variable} ${jakarta.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen bg-background text-foreground flex items-center justify-center p-4" suppressHydrationWarning>
           <div className="max-w-md w-full space-y-8 text-center bg-card p-8 rounded-3xl border border-destructive/20 shadow-2xl relative overflow-hidden">
             {/* Background warning pattern */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -52,7 +50,6 @@ export default function GlobalError({
               </button>
             </div>
           </div>
-        </ThemeProvider>
       </body>
     </html>
   );

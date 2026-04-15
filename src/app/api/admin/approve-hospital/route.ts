@@ -31,16 +31,38 @@ export async function POST(request: Request) {
     const idKey = user_type === 'hospital' ? 'id' : 'donor_id';
 
     // 2. Update status in Database
+    const updatePayload: any = { 
+      approval_status: 'approved',
+      approved_at: new Date().toISOString()
+    };
+    
+    // Only hospitals use the legacy 'is_verified' boolean
+    if (user_type === 'hospital') {
+      updatePayload.is_verified = true;
+    }
+
     const { error: updateError } = await adminClient
       .from(table)
-      .update({ 
-        approval_status: 'approved',
-        is_verified: true, // Legacy support
-        approved_at: new Date().toISOString()
-      })
-      .eq(idKey, user_id);
+      .update(updatePayload)
+      .eq('user_id', user_id); 
 
     if (updateError) throw updateError;
+
+    // 2.5 ALSO Update the central 'donors' table if it's a donor
+    if (user_type.includes('donor')) {
+      await adminClient
+        .from('donors')
+        .update({ status: 'active' })
+        .eq('user_id', user_id);
+    }
+
+    // 2.6 Update Supabase Auth user metadata so their session knows they're verified
+    await adminClient.auth.admin.updateUserById(user_id, {
+      user_metadata: {
+        is_verified: true,
+        approval_status: 'approved',
+      }
+    });
 
     // 3. Send Success Email
     try {

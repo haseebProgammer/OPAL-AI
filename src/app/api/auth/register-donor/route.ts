@@ -22,6 +22,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "An account already exists with this email address." }, { status: 409 });
     }
 
+    // 3. Strict Check for Duplicate CNIC
+    const { data: existingCNIC } = await adminSupabase
+      .from('donors')
+      .select('id')
+      .eq('cnic', data.cnic)
+      .maybeSingle();
+
+    if (existingCNIC) {
+      return NextResponse.json({ success: false, error: "This CNIC is already registered in our network." }, { status: 409 });
+    }
+
     // 3. Create Auth User
     const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
       email: data.email,
@@ -69,7 +80,8 @@ export async function POST(request: NextRequest) {
         blood_type: data.bloodType,
         hepatitis_status: data.hepStatus,
         city: data.city,
-        is_available: false
+        is_available: false,
+        approval_status: 'pending'
       }]);
     }
 
@@ -89,7 +101,8 @@ export async function POST(request: NextRequest) {
         next_of_kin_contact: data.nextOfKinContact,
         consent_given: !!data.consent,
         city: data.city,
-        is_available: false
+        is_available: false,
+        approval_status: 'pending'
       }]);
     }
 

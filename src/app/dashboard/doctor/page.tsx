@@ -26,11 +26,32 @@ export default function DoctorDashboard() {
             </div>
 
             {pendingVerifications.length === 0 ? (
-              <EmptyState 
-                title="Clinical Queue Empty"
-                description="No new donor medical files require review at this moment."
-                icon="folder"
-              />
+              <div className="space-y-4">
+                 {/* Simulated Verification Card */}
+                 <div className="p-6 rounded-2xl bg-background border border-border hover:border-primary transition-all group">
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center font-black text-primary">DP</div>
+                          <div>
+                             <p className="text-sm font-bold">Daniyal Pasha</p>
+                             <p className="text-[10px] text-muted-foreground uppercase font-black">Organ Donor (Kidney)</p>
+                          </div>
+                       </div>
+                       <div className="flex items-center gap-2">
+                          <button className="px-4 py-2 rounded-xl bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
+                             View Lab Reports (PDF)
+                          </button>
+                          <button className="p-2 rounded-xl bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-all">
+                             <CheckCircle className="h-4 w-4" />
+                          </button>
+                       </div>
+                    </div>
+                 </div>
+                 
+                 <p className="text-[10px] text-center text-muted-foreground mt-4 italic">
+                    Note: Document review is mandatory under the Pakistan Organ Transplant Act.
+                 </p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {/* Pending donor rows would go here */}
