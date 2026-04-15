@@ -216,32 +216,117 @@ export default function DonorSignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left Sidebar Info */}
-      <div className="hidden lg:flex lg:w-1/3 bg-card border-r border-border p-12 flex-col justify-between relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      {/* LEFT PANEL — Cinematic Visual (Like reference image) */}
+      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-between" style={{
+        background: "linear-gradient(135deg, #0a0a0a 0%, #1a0505 40%, #2d0a0a 70%, #0a0a0a 100%)"
+      }}>
         
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2 mb-12">
-            <Heart className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold font-display tracking-tight">OPAL<span className="text-primary">-AI</span></span>
-          </Link>
-          <h1 className="text-4xl font-display font-bold leading-tight mb-6">Become a <br/><span className="text-primary">Life Saver</span></h1>
-          <p className="text-muted-foreground text-lg mb-8">
-            Join thousands of verified donors ready to make a real impact. It only takes 2 minutes to register.
-          </p>
+        {/* Animated Background Orbs */}
+        <div className="absolute inset-0 overflow-hidden">
+          {/* Large glow orb */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl animate-pulse"
+            style={{ background: "radial-gradient(circle, #dc2626 0%, #7f1d1d 50%, transparent 100%)" }} />
+          {/* Secondary orb */}
+          <div className="absolute bottom-1/3 right-1/4 w-64 h-64 rounded-full opacity-15 blur-3xl"
+            style={{ background: "radial-gradient(circle, #ef4444 0%, #991b1b 60%, transparent 100%)", animation: "pulse 3s ease-in-out 1.5s infinite" }} />
+          {/* Top right glow */}
+          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-10 blur-3xl"
+            style={{ background: "radial-gradient(circle, #b91c1c 0%, transparent 70%)" }} />
+          
+          {/* Floating particles */}
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="absolute rounded-full bg-red-500/30 animate-bounce"
+              style={{
+                width: `${4 + (i % 4) * 3}px`,
+                height: `${4 + (i % 4) * 3}px`,
+                left: `${8 + (i * 7.5) % 85}%`,
+                top: `${10 + (i * 13) % 80}%`,
+                animationDelay: `${i * 0.3}s`,
+                animationDuration: `${2 + (i % 3)}s`,
+              }}
+            />
+          ))}
 
+          {/* Grid lines overlay */}
+          <div className="absolute inset-0 opacity-5"
+            style={{ backgroundImage: "linear-gradient(rgba(220,38,38,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,0.4) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+        </div>
+
+        {/* Heartbeat Line SVG */}
+        <div className="absolute bottom-1/3 left-0 right-0 opacity-20">
+          <svg viewBox="0 0 400 80" className="w-full" preserveAspectRatio="none">
+            <polyline
+              points="0,40 40,40 60,10 75,70 90,20 110,50 140,40 200,40 220,5 235,75 250,20 270,55 290,40 400,40"
+              fill="none" stroke="#dc2626" strokeWidth="2"
+              style={{ strokeDasharray: 800, strokeDashoffset: 0, animation: "dash 4s linear infinite" }}
+            />
+          </svg>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 p-12 flex flex-col h-full justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
+              <Heart className="h-5 w-5 text-white fill-white" />
+            </div>
+            <span className="text-xl font-black tracking-tight text-white">OPAL<span className="text-primary">-AI</span></span>
+          </Link>
+
+          {/* Main Text — Like "Create your Free Account" in reference */}
           <div className="space-y-6">
-            {[ 
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-black uppercase tracking-widest">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Secure Medical Network
+            </div>
+            <h1 className="text-5xl font-black leading-tight text-white">
+              Become a<br />
+              <span className="text-primary" style={{ textShadow: "0 0 40px rgba(220,38,38,0.5)" }}>Life Saver</span>
+            </h1>
+            <p className="text-white/60 text-lg leading-relaxed">
+              Register as a verified donor and connect with hospitals that need you most — powered by AI matching.
+            </p>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 gap-4 pt-4">
+              {[
+                { value: "2 min", label: "To Register" },
+                { value: "8 lives", label: "You Can Save" },
+                { value: "24/7", label: "AI Matching" },
+              ].map((stat) => (
+                <div key={stat.value} className="text-center p-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
+                  <div className="text-xl font-black text-primary">{stat.value}</div>
+                  <div className="text-[10px] text-white/50 uppercase tracking-widest font-bold mt-0.5">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step indicators at bottom */}
+          <div className="space-y-3">
+            {[
               { stepNum: 1, title: "Account Details", icon: Lock },
               { stepNum: 2, title: "Personal Info", icon: User },
               { stepNum: 3, title: "Medical Background", icon: Activity },
               { stepNum: 4, title: "Donation Preferences", icon: Heart }
             ].map((s) => (
-              <div key={s.stepNum} className={`flex items-center gap-4 transition-all ${step === s.stepNum ? 'text-primary scale-105 form-step-active' : step > s.stepNum ? 'text-muted-foreground' : 'text-muted-foreground/30'}`}>
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${step === s.stepNum ? 'bg-primary/20 ring-1 ring-primary' : step > s.stepNum ? 'bg-card border border-border' : 'border border-border/50'}`}>
-                  <s.icon className="h-5 w-5" />
+              <div key={s.stepNum} className={`flex items-center gap-3 transition-all duration-300 ${
+                step === s.stepNum ? 'opacity-100' : step > s.stepNum ? 'opacity-50' : 'opacity-20'
+              }`}>
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all ${
+                  step === s.stepNum ? 'bg-primary shadow-lg shadow-primary/40' : 
+                  step > s.stepNum ? 'bg-white/10 border border-white/20' : 'border border-white/10'
+                }`}>
+                  <s.icon className={`h-3.5 w-3.5 ${step === s.stepNum ? 'text-white' : 'text-white/50'}`} />
                 </div>
-                <div className="font-medium">{s.title}</div>
+                <span className={`text-sm font-bold ${step === s.stepNum ? 'text-white' : 'text-white/40'}`}>
+                  {s.title}
+                </span>
+                {step > s.stepNum && (
+                  <div className="ml-auto h-4 w-4 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center">
+                    <CheckCircle className="h-2.5 w-2.5 text-green-400" />
+                  </div>
+                )}
               </div>
             ))}
           </div>

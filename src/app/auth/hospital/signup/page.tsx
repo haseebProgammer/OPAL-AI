@@ -136,49 +136,115 @@ export default function HospitalSignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background tracking-tight">
-      {/* Left Sidebar Info */}
-      <div className="hidden lg:flex lg:w-1/3 bg-muted/30 border-r border-border p-12 flex-col justify-between relative overflow-hidden backdrop-blur-3xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        
-        <div className="relative z-10">
-          <Link href="/" className="flex items-center gap-2 mb-12 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 group-hover:scale-110 transition-transform">
-              <Building2 className="h-6 w-6" />
-            </div>
-            <span className="text-2xl font-bold font-display tracking-tight text-foreground">OPAL<span className="text-primary">-AI</span></span>
-          </Link>
-          
-          <h1 className="text-4xl font-display font-bold leading-tight mb-6 text-foreground">
-            Hospital <span className="text-primary">Network</span> Registration
-          </h1>
-          <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-            Gain secure access to high-precision matching protocols and a verified national donor base.
-          </p>
+      {/* LEFT PANEL — Cinematic Hospital Visual */}
+      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-between" style={{
+        background: "linear-gradient(135deg, #0a0a0a 0%, #050a1a 40%, #0a1a2d 70%, #0a0a0a 100%)"
+      }}>
 
+        {/* Animated Background Orbs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full opacity-20 blur-3xl animate-pulse"
+            style={{ background: "radial-gradient(circle, #dc2626 0%, #7f1d1d 50%, transparent 100%)" }} />
+          <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full opacity-15 blur-3xl"
+            style={{ background: "radial-gradient(circle, #ef4444 0%, #1d4ed8 60%, transparent 100%)", animation: "pulse 4s ease-in-out 1s infinite" }} />
+          <div className="absolute -bottom-20 -left-10 w-80 h-80 rounded-full opacity-10 blur-3xl"
+            style={{ background: "radial-gradient(circle, #dc2626 0%, transparent 70%)" }} />
+
+          {/* Floating cross / plus signs */}
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="absolute text-red-500/20 font-black text-2xl animate-pulse select-none"
+              style={{
+                left: `${10 + (i * 11) % 80}%`,
+                top: `${15 + (i * 17) % 70}%`,
+                animationDelay: `${i * 0.4}s`,
+                animationDuration: `${2.5 + (i % 3)}s`,
+                fontSize: `${16 + (i % 3) * 12}px`,
+              }}>+</div>
+          ))}
+
+          {/* Grid lines */}
+          <div className="absolute inset-0 opacity-5"
+            style={{ backgroundImage: "linear-gradient(rgba(220,38,38,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(220,38,38,0.3) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
+        </div>
+
+        {/* ECG Line */}
+        <div className="absolute bottom-2/5 left-0 right-0 opacity-15">
+          <svg viewBox="0 0 400 60" className="w-full" preserveAspectRatio="none">
+            <polyline
+              points="0,30 50,30 65,5 75,55 85,15 100,40 130,30 200,30 215,8 228,52 242,18 258,42 275,30 400,30"
+              fill="none" stroke="#dc2626" strokeWidth="1.5"
+            />
+          </svg>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 p-12 flex flex-col h-full justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3">
+            <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
+              <Building2 className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xl font-black tracking-tight text-white">OPAL<span className="text-primary">-AI</span></span>
+          </Link>
+
+          {/* Main Text */}
           <div className="space-y-6">
-            {[ 
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 border border-primary/30 text-primary text-xs font-black uppercase tracking-widest">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Verified Medical Network
+            </div>
+            <h1 className="text-5xl font-black leading-tight text-white">
+              Join the<br />
+              <span className="text-primary" style={{ textShadow: "0 0 40px rgba(220,38,38,0.5)" }}>Hospital</span>
+              <br />
+              <span className="text-white/80 text-4xl">Network</span>
+            </h1>
+            <p className="text-white/60 text-base leading-relaxed">
+              Access a verified national donor pool and precision AI matching — built for critical care teams.
+            </p>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              {[
+                { value: "24/7", label: "AI Matching" },
+                { value: "60%", label: "Faster Matching" },
+                { value: "800+", label: "Donors Online" },
+              ].map((stat) => (
+                <div key={stat.value} className="text-center p-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
+                  <div className="text-xl font-black text-primary">{stat.value}</div>
+                  <div className="text-[10px] text-white/50 uppercase tracking-widest font-bold mt-0.5">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Step indicators */}
+          <div className="space-y-3">
+            {[
               { stepNum: 1, title: "Institution Info", icon: Building2 },
               { stepNum: 2, title: "Location & Contact", icon: MapPin },
               { stepNum: 3, title: "Admin Credentials", icon: Lock },
-              { stepNum: 4, title: "Review & Commit", icon: ClipboardCheck }
+              { stepNum: 4, title: "Review & Submit", icon: ClipboardCheck }
             ].map((s) => (
-              <div key={s.stepNum} className={`flex items-center gap-4 transition-all ${step === s.stepNum ? 'text-primary scale-105' : step > s.stepNum ? 'text-primary' : 'text-muted-foreground/40'}`}>
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all ${step === s.stepNum ? 'bg-primary/20 ring-1 ring-primary shadow-[0_0_15px_rgba(220,38,38,0.3)]' : step > s.stepNum ? 'bg-primary/10 border border-primary/20' : 'bg-muted border border-border'}`}>
-                  <s.icon className="h-5 w-5" />
+              <div key={s.stepNum} className={`flex items-center gap-3 transition-all duration-300 ${
+                step === s.stepNum ? 'opacity-100' : step > s.stepNum ? 'opacity-50' : 'opacity-20'
+              }`}>
+                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all ${
+                  step === s.stepNum ? 'bg-primary shadow-lg shadow-primary/40' :
+                  step > s.stepNum ? 'bg-white/10 border border-white/20' : 'border border-white/10'
+                }`}>
+                  <s.icon className={`h-3.5 w-3.5 ${step === s.stepNum ? 'text-white' : 'text-white/50'}`} />
                 </div>
-                <div className="font-semibold text-sm tracking-wide uppercase">{s.title}</div>
+                <span className={`text-sm font-bold ${step === s.stepNum ? 'text-white' : 'text-white/40'}`}>
+                  {s.title}
+                </span>
+                {step > s.stepNum && (
+                  <div className="ml-auto h-4 w-4 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center">
+                    <CheckCircle className="h-2.5 w-2.5 text-green-400" />
+                  </div>
+                )}
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className="relative z-10 p-6 rounded-2xl bg-card border border-border shadow-sm">
-          <p className="text-xs text-muted-foreground italic leading-relaxed">
-            &quot;OPAL-AI has reduced our emergency cross-match time by 60%. Essential for modern organ procurement.&quot;
-          </p>
-          <div className="mt-3 flex items-center gap-2">
-            <div className="h-6 w-px bg-primary" />
-            <span className="text-[10px] font-bold text-foreground tracking-widest uppercase">General Hospital, Islamabad</span>
           </div>
         </div>
       </div>
