@@ -66,15 +66,16 @@ export default function AdminDashboard() {
   const fetchPendingApprovals = async () => {
     setIsDataLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('pending_approvals')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const res = await fetch("/api/admin/pending-approvals");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to fetch");
+      }
+      const data = await res.json();
       setPendingApprovals(data || []);
     } catch (e: any) {
       console.error("Failed to fetch pending approvals", e);
+      setPendingApprovals([]);
     } finally {
       setIsDataLoading(false);
     }
