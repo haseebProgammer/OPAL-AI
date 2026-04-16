@@ -1,12 +1,26 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from routes import blood_donors, organ_donors, hospitals, matching
+from routes.matching import MLModelManager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load the ML model once at startup
+    print("--- [STARTUP] Initializing Production AI Matching Model v2 ---")
+    try:
+        MLModelManager.get_model()
+    except Exception as e:
+        print(f"FAILED TO LOAD ML MODEL: {e}")
+    yield
+    print("--- [SHUTDOWN] Cleaning up ---")
 
 app = FastAPI(
     title="OPAL-AI Backend",
     description="Intelligent Organ & Blood Donor Matching Platform",
-    version="1.0.0"
+    version="2.0.0",
+    lifespan=lifespan
 )
 
 # CORS Configuration
