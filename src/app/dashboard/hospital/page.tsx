@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -153,10 +153,13 @@ export default function HospitalDashboard() {
   const { data: allHospitals } = useHospitals();
   const { data: recipients } = useRecipients();
   const [realtimeMatches, setRealtimeMatches] = useState<any[]>([]);
-  useRealtimeMatchResults((match) => {
+  
+  const handleNewMatch = useCallback((match: any) => {
     setRealtimeMatches(prev => [match, ...prev.slice(0, 9)]);
     toast.info("New medical request broadcast detected in network!");
-  });
+  }, []);
+
+  useRealtimeMatchResults(handleNewMatch);
 
   const isLoading = matchLoading || donorLoading;
 

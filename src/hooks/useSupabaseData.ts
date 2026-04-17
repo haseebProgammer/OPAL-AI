@@ -20,17 +20,16 @@ const BACKEND_URL = API_BASE_URL;
  */
 export function useRealtimeMatchResults(onNewMatch: (match: any) => void) {
   useEffect(() => {
-    // Listen for new organ requests as a proxy for network activity
+    const channelId = `clinical-alerts-${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel("clinical-alerts")
+      .channel(channelId)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "organ_requests" },
         (payload) => {
-          // Simulate extraction of match details for notification
           onNewMatch({
             id: payload.new.id,
-            donor_name: "Clinical Node " + payload.new.patient_blood_type, // Privacy-aware placeholder
+            donor_name: "Clinical Node " + payload.new.patient_blood_type,
             patient_blood_type: payload.new.patient_blood_type,
           });
         }
