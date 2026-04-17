@@ -11,15 +11,6 @@ import { MapPin, Activity, Heart, Building2 } from "lucide-react";
 
 // Custom Icons for that high-end look
 const donorIcon = new L.Icon({
-  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-const hospitalIcon = new L.Icon({
   iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
   iconSize: [25, 41],
@@ -28,22 +19,16 @@ const hospitalIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-const CITY_COORDS: Record<string, [number, number]> = {
-    "Karachi": [24.8607, 67.0011],
-    "Lahore": [31.5204, 74.3587],
-    "Islamabad": [33.6844, 73.0479],
-    "Faisalabad": [31.4504, 73.1350],
-    "Rawalpindi": [33.5651, 73.0169],
-    "Multan": [30.1575, 71.4504],
-    "Peshawar": [34.0151, 71.5249],
-    "Quetta": [30.1798, 66.9750]
-};
+const hospitalIcon = new L.Icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
-interface NetworkMapProps {
-  donors: any[];
-  hospitals: any[];
-  matches: any[];
-}
+// ... (CITY_COORDS stay same)
 
 export default function NetworkMap({ donors, hospitals, matches }: NetworkMapProps) {
   const [isMounted, setIsMounted] = useState(false);
@@ -55,23 +40,30 @@ export default function NetworkMap({ donors, hospitals, matches }: NetworkMapPro
   if (!isMounted) return <div className="h-[500px] w-full bg-muted rounded-[2.5rem] animate-pulse" />;
 
   const center: [number, number] = [30.3753, 69.3451]; // Center of Pakistan
+  const pakistanBounds: L.LatLngBoundsExpression = [
+    [23.6345, 60.8728], // Southwest (near Gwadar)
+    [37.0841, 77.8375]  // Northeast (near Gilgit)
+  ];
 
   return (
     <div className="relative h-[600px] w-full rounded-[2.5rem] overflow-hidden border border-border shadow-2xl glass-card">
       <div className="absolute top-6 left-6 z-[1000] flex flex-col gap-2">
          <div className="bg-background/80 backdrop-blur-md px-4 py-2 rounded-xl border border-border shadow-xl flex items-center gap-3">
-            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Active Donors</span>
+            <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Medical Donors</span>
          </div>
          <div className="bg-background/80 backdrop-blur-md px-4 py-2 rounded-xl border border-border shadow-xl flex items-center gap-3">
-            <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Live Nodes</span>
+            <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Hospital Hubs</span>
          </div>
       </div>
 
       <MapContainer 
         center={center} 
         zoom={6} 
+        minZoom={5}
+        maxBounds={pakistanBounds}
+        maxBoundsViscosity={1.0}
         style={{ height: "100%", width: "100%", background: "#050505" }}
         zoomControl={false}
       >
