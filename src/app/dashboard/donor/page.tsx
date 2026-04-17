@@ -42,20 +42,10 @@ export default function DonorDashboard() {
       const isAdmin = userRole === "admin" || isAdminEmail || isAdminMode;
       
       setRole(isAdmin ? "admin" : userRole);
-      
-      if (!userRole && !isAdmin) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      if (!isAdmin && userRole !== "donor") {
-        router.replace("/dashboard");
-        return;
-      }
       setAuthLoading(false);
     }
     checkRole();
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.get("verified") === "true") {

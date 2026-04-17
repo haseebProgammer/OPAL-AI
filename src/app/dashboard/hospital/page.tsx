@@ -114,35 +114,10 @@ export default function HospitalDashboard() {
       const isAdmin = userRole === "admin" || isAdminEmail || isAdminMode;
       
       setRole(isAdmin ? "admin" : userRole);
-      
-      if (!userRole && !isAdmin) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      if (!isAdmin && userRole !== "hospital") {
-        router.replace("/dashboard");
-        return;
-      }
-      
-      if (userRole === "hospital" && !isAdminEmail && !isAdminMode) {
-        const { data: hospitalData } = await supabase
-          .from("hospitals")
-          .select("is_verified")
-          .eq("user_id", user?.id)
-          .maybeSingle();
-
-        if (hospitalData && hospitalData.is_verified === false) {
-          router.replace("/auth/pending-approval");
-          return;
-        }
-      }
-      
-      setIsVerified(true);
       setAuthLoading(false);
     }
     checkRole();
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.get("verified") === "true") {
