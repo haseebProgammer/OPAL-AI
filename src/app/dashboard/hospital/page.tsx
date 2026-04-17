@@ -138,7 +138,12 @@ export default function HospitalDashboard() {
 
   const isLoading = matchLoading || donorLoading;
 
-  const matches = (matchResults && matchResults.length > 0) ? matchResults : mockMatches.map(m => ({
+  const matches = (matchResults && matchResults.length > 0) ? matchResults : [
+    ...mockMatches,
+    { id: 'sim-1', donor_id: 'd-99', donor_name: "Fatima Ali", match_score: 98, blood_type: "A+", distance_km: 1.2, status: 'approved', created_at: new Date().toISOString() },
+    { id: 'sim-2', donor_id: 'd-88', donor_name: "Zeeshan Khan", match_score: 92, blood_type: "O-", distance_km: 4.5, status: 'pending', created_at: new Date(Date.now() - 3600000).toISOString() },
+    { id: 'sim-3', donor_id: 'd-77', donor_name: "Hamza Sheikh", match_score: 87, blood_type: "B+", distance_km: 12.8, status: 'completed', created_at: new Date(Date.now() - 86400000).toISOString() },
+  ].map(m => ({
     ...m,
     id: m.id,
     donor_id: m.donor_id,
