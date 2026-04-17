@@ -28,7 +28,22 @@ const hospitalIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
-// ... (CITY_COORDS stay same)
+const CITY_COORDS: Record<string, [number, number]> = {
+    "Karachi": [24.8607, 67.0011],
+    "Lahore": [31.5204, 74.3587],
+    "Islamabad": [33.6844, 73.0479],
+    "Faisalabad": [31.4504, 73.1350],
+    "Rawalpindi": [33.5651, 73.0169],
+    "Multan": [30.1575, 71.4504],
+    "Peshawar": [34.0151, 71.5249],
+    "Quetta": [30.1798, 66.9750]
+};
+
+interface NetworkMapProps {
+  donors: any[];
+  hospitals: any[];
+  matches: any[];
+}
 
 export default function NetworkMap({ donors, hospitals, matches }: NetworkMapProps) {
   const [isMounted, setIsMounted] = useState(false);
