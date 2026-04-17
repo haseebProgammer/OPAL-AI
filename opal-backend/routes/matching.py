@@ -109,19 +109,21 @@ async def find_matches(request: HospitalMatchRequest):
     hosp = hosp_res.data[0]
     h_lat, h_lng = hosp.get('latitude', 33.6844), hosp.get('longitude', 73.0479)
 
-    # 2. Fetch Available Donors
-    # Step 2: Adaptive Fetching (Unified vs Split)
+    # 2. Fetch Available Donors Surgically (Predicates pushed to Database)
     try:
-        donors_res = supabase.table("donors_unified").select("*").eq("is_available", True).execute()
+        query = supabase.table("organ_donors" if request.donor_type == "organ" else "blood_donors")
+        query = query.select("*").eq("is_available", True)
+        
+        # Surgical Filter: Only fetch requested organs if organ mode
+        if request.donor_type == "organ" and request.required_organs:
+            # Matches any organ in required list
+            query = query.filter("organ_type", "in", f'({",".join(request.required_organs)})')
+            
+        donors_res = query.execute()
         raw_donors = donors_res.data
-        # Filter by type if specifically requested, else AI can handle both
-        if request.donor_type:
-            raw_donors = [d for d in raw_donors if d['type'] == request.donor_type]
-    except Exception:
-        # Fallback to legacy split logic
-        table = "organ_donors" if request.donor_type == "organ" else "blood_donors"
-        donors_res = supabase.table(table).select("*").eq("is_available", True).execute()
-        raw_donors = donors_res.data
+    except Exception as e:
+        print(f"[SQL ERROR] Surgical fetch failed: {e}")
+        raw_donors = []
 
     # 3. Clinical Compatibility Filter (CIT + Age + Blood)
     comp_donors, stats = filter_compatible_donors(
