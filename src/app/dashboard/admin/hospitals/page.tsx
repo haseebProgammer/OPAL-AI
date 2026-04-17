@@ -1,13 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, Ban, Trash2, Eye, X, ShieldCheck, Phone, Mail, MapPin, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Hospital } from "@/lib/types";
+import { createClient } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+
+const supabase = createClient();
 
 export default function AdminHospitalsPage() {
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    async function verifyIdentity() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const userEmail = user?.email?.toLowerCase();
+        const isMasterAdmin = userEmail === "ranahaseeb9427@gmail.com";
+        const isRoleAdmin = user?.user_metadata?.role === "admin";
+        
+        setIsAuthorized(isMasterAdmin || isRoleAdmin);
+      } catch (err) {
+        setIsAuthorized(false);
+      }
+    }
+    verifyIdentity();
+  }, []);
+
   const { data: allHospitals, refetch: refetchHospitals, isLoading } = useQuery<Hospital[]>({
     queryKey: ['admin_all_hospitals'],
     queryFn: async () => {
@@ -16,7 +39,20 @@ export default function AdminHospitalsPage() {
       return await res.json();
     },
     refetchInterval: 15000,
+    enabled: !!isAuthorized
   });
+
+  if (isAuthorized === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] space-y-4">
+        <ShieldCheck className="h-12 w-12 text-red-500" />
+        <h2 className="text-xl font-bold uppercase">Restricted Access</h2>
+        <button onClick={() => router.push("/dashboard")} className="px-6 py-2 bg-muted rounded-xl text-xs font-bold uppercase transition-all">Return</button>
+      </div>
+    );
+  }
+
+  if (isAuthorized === null) return null;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");

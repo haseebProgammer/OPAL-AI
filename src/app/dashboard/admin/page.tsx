@@ -58,11 +58,52 @@ export default function AdminDashboard() {
 
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetchStats();
-    fetchPendingApprovals();
+    async function verifyIdentity() {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userEmail = user?.email?.toLowerCase();
+      const isMasterAdmin = userEmail === "ranahaseeb9427@gmail.com";
+      const isRoleAdmin = user?.user_metadata?.role === "admin";
+      
+      if (isMasterAdmin || isRoleAdmin) {
+        setIsAuthorized(true);
+      } else {
+        setIsAuthorized(false);
+      }
+    }
+    verifyIdentity();
   }, []);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchStats();
+      fetchPendingApprovals();
+    }
+  }, [isAuthorized]);
+
+  if (isAuthorized === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] space-y-6">
+        <div className="h-20 w-20 rounded-[2.5rem] bg-red-500/10 flex items-center justify-center text-red-500 shadow-2xl shadow-red-500/20">
+          <ShieldCheck className="h-10 w-10" />
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-black font-display uppercase">Administrative Lockdown</h2>
+          <p className="text-muted-foreground text-sm font-medium">Your credentials do not have the neural clearance for this node.</p>
+        </div>
+        <button 
+          onClick={() => router.push("/dashboard")}
+          className="px-8 py-3 bg-muted border border-border rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-muted/80 transition-all"
+        >
+          Return to Safe Zone
+        </button>
+      </div>
+    );
+  }
+
+  if (isAuthorized === null) return null; // Prevent flicker
 
   const fetchPendingApprovals = async () => {
     setIsDataLoading(true);

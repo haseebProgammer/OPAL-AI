@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import {
   Heart, Mail, Lock, User, Phone, MapPin, Activity, ShieldAlert, CheckCircle, Droplet, ArrowRight, ArrowLeft, Loader2, CreditCard, ChevronDown
 } from "lucide-react";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 
 export default function DonorSignupPage() {
   const router = useRouter();
@@ -399,14 +400,13 @@ export default function DonorSignupPage() {
                     {errors.email && <p className="text-xs text-destructive">{String(errors.email.message)}</p>}
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <input {...register("password")} type="password" placeholder="Min. 8 characters" className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" suppressHydrationWarning />
-                    </div>
-                    {errors.password && <p className="text-xs text-destructive">{String(errors.password.message)}</p>}
-                  </div>
+                  <PasswordInput
+                    {...register("password")}
+                    label="Password"
+                    placeholder="Min. 8 characters"
+                    suppressHydrationWarning
+                  />
+                  {errors.password && <p className="text-xs text-destructive">{String(errors.password.message)}</p>}
                 </motion.div>
               )}
 

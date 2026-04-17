@@ -123,12 +123,16 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link
-                  href="/auth/login"
+                <button
+                  onClick={async () => {
+                    const supabase = createClient();
+                    await supabase.auth.signOut();
+                    window.location.href = "/auth/login";
+                  }}
                   className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-4 py-2"
                 >
                   Sign In
-                </Link>
+                </button>
                 <Link
                   href="/auth/donor/signup"
                   className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98]"
@@ -199,13 +203,16 @@ export function Navbar() {
                    </>
                 ) : (
                   <>
-                    <Link
-                      href="/auth/login"
+                    <button
+                      onClick={async () => {
+                        const supabase = createClient();
+                        await supabase.auth.signOut();
+                        window.location.href = "/auth/login";
+                      }}
                       className="text-center text-sm font-medium text-muted-foreground py-2"
-                      onClick={() => setMobileOpen(false)}
                     >
                       Sign In
-                    </Link>
+                    </button>
                     <Link
                       href="/auth/donor/signup"
                       className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"

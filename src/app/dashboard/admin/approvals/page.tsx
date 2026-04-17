@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Check, 
@@ -21,6 +21,10 @@ import { toast } from "sonner";
 import { useHospitals, useAllDonors } from "@/hooks/useSupabaseData";
 import { mockHospitals, mockDonors } from "@/data/mock";
 import { Hospital, Donor } from "@/lib/types";
+import { createClient } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+
+const supabase = createClient();
 
 export default function AdminApprovalsPage() {
   const [tab, setTab] = useState<"hospitals" | "donors">("hospitals");
@@ -28,28 +32,46 @@ export default function AdminApprovalsPage() {
   const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch unified pending approvals from API
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const router = useRouter();
 
-  const fetchPending = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/admin/pending-approvals");
-      const data = await res.json();
-      setPendingApprovals(data);
-    } catch (e) {
-      toast.error("Failed to sync verification queue.");
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    async function verifyIdentity() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const userEmail = user?.email?.toLowerCase();
+        const isMasterAdmin = userEmail === "ranahaseeb9427@gmail.com";
+        const isRoleAdmin = user?.user_metadata?.role === "admin";
+        
+        setIsAuthorized(isMasterAdmin || isRoleAdmin);
+      } catch (err) {
+        setIsAuthorized(false);
+      }
     }
-  };
+    verifyIdentity();
+  }, []);
 
-  useState(() => {
-    fetchPending();
-  });
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchPending();
+    }
+  }, [isAuthorized]);
+
+  if (isAuthorized === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] space-y-4">
+        <ShieldCheck className="h-12 w-12 text-red-500" />
+        <h2 className="text-xl font-bold uppercase">Restricted Access</h2>
+        <button onClick={() => router.push("/dashboard")} className="px-6 py-2 bg-muted rounded-xl text-xs font-bold uppercase transition-all">Return</button>
+      </div>
+    );
+  }
+
+  if (isAuthorized === null) return null;
 
   // Filter Logic
   const allFiltered = pendingApprovals.filter(item => {
@@ -63,8 +85,13 @@ export default function AdminApprovalsPage() {
   const allCities = Array.from(new Set(pendingApprovals.map(p => p.city).filter(Boolean)));
 
   const handleApprove = async (item: any) => {
+    if (isActionLoading) return;
     setIsActionLoading(item.id);
     
+    // Optimistic Update: Remove from UI immediately for "Anti-Gravity" feel
+    const previousQueue = [...pendingApprovals];
+    setPendingApprovals(prev => prev.filter(p => p.id !== item.id));
+
     try {
       const res = await fetch("/api/admin/approve-hospital", {
         method: "POST",
@@ -76,35 +103,44 @@ export default function AdminApprovalsPage() {
           name: item.full_name || item.hospital_name
         }),
       });
+
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || "Failed to approve");
+        throw new Error(err.error || "Failed to authorize node.");
       }
-      toast.success(`${item.user_type === 'hospital' ? 'Hospital' : 'Donor'} authorized successfully.`);
-      fetchPending();
+      
+      toast.success(`${item.user_type === 'hospital' ? 'Hospital' : 'Donor'} node activated.`);
     } catch (e: any) {
+      setPendingApprovals(previousQueue); // Restore on failure
       toast.error(e.message);
     } finally {
       setIsActionLoading(null);
+      fetchPending(); // Background sync
     }
   };
 
-  const handleReject = async (id: string) => {
-    if (!confirm("Are you sure you want to reject and remove this application?")) return;
-    setIsActionLoading(id);
+  const handleReject = async (item: any) => {
+    if (!confirm("Are you sure you want to purge this application?")) return;
+    if (isActionLoading) return;
+    
+    setIsActionLoading(item.id);
+    const previousQueue = [...pendingApprovals];
+    setPendingApprovals(prev => prev.filter(p => p.id !== item.id));
+
     try {
       const res = await fetch("/api/admin/reject-hospital", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hospital_id: id }),
+        body: JSON.stringify({ hospital_id: item.id }),
       });
-      if (!res.ok) throw new Error("Failed to reject");
-      toast.success("Application rejected and removed.");
-      fetchPending();
+      if (!res.ok) throw new Error("Failed to purge application.");
+      toast.success("Identity application purged.");
     } catch (e: any) {
+      setPendingApprovals(previousQueue);
       toast.error(e.message);
     } finally {
       setIsActionLoading(null);
+      fetchPending();
     }
   };
 
@@ -225,7 +261,7 @@ export default function AdminApprovalsPage() {
                            <button onClick={() => handleApprove(item)} disabled={isActionLoading === item.id} className="h-9 w-9 rounded-xl bg-success/20 text-success flex items-center justify-center hover:bg-success hover:text-white transition-all shadow-lg shadow-success/10 disabled:opacity-50">
                             {isActionLoading === item.id ? <Activity className="h-4 w-4 animate-spin" /> : <Check className="h-5 w-5" />}
                            </button>
-                           <button onClick={() => handleReject(item.id)} disabled={isActionLoading === item.id} className="h-9 w-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive hover:text-white transition-all shadow-lg shadow-destructive/10 disabled:opacity-50">
+                           <button onClick={() => handleReject(item)} disabled={isActionLoading === item.id} className="h-9 w-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive hover:text-white transition-all shadow-lg shadow-destructive/10 disabled:opacity-50">
                             <X className="h-5 w-5" />
                            </button>
                         </div>

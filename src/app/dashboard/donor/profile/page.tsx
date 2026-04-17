@@ -49,7 +49,7 @@ export default function DonorProfilePage() {
     );
   }
 
-  const medical = donor.medical;
+  const clinical = donor.clinical;
 
   const fields = [
     { label: "Full Name", value: donor.full_name, icon: User, locked: true },
@@ -58,13 +58,11 @@ export default function DonorProfilePage() {
     { label: "City", value: donor.city, icon: MapPin, locked: true },
     
     // Medical Profile Fields (New)
-    { label: "HIV Status", value: medical?.hiv_status || "—", icon: Shield, locked: false },
-    { label: "Hepatitis Status", value: medical?.hepatitis_status || "—", icon: Shield, locked: false },
-    { label: "Diabetic", value: medical?.is_diabetic ? "Yes" : "No", icon: Activity, locked: false },
-    { label: "Smoker", value: medical?.is_smoker ? "Yes" : "No", icon: Activity, locked: false },
-    { label: "Height", value: medical?.height_cm ? `${medical.height_cm} cm` : "—", icon: Ruler, locked: false },
-    { label: "Weight", value: medical?.weight_kg ? `${medical.weight_kg} kg` : "—", icon: Scale, locked: false },
-    { label: "Next of Kin", value: medical?.next_of_kin_name || "—", icon: User, locked: false },
+    { label: "HIV Status", value: clinical?.hiv || "—", icon: Shield, locked: false },
+    { label: "Hepatitis Status", value: clinical?.hep || "—", icon: Shield, locked: false },
+    { label: "Diabetic", value: clinical?.diabetes ? "Yes" : "No", icon: Activity, locked: false },
+    { label: "Smoker", value: clinical?.smoker ? "Yes" : "No", icon: Activity, locked: false },
+    { label: "Next of Kin", value: clinical?.kin_contact || "—", icon: User, locked: false },
   ];
 
   return (

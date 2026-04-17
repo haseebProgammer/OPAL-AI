@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { 
   Activity, 
   MapPin, 
@@ -51,6 +52,31 @@ const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: 
   const score = Math.round(match.ai_score * 100);
   const scoreColor = score >= 80 ? "bg-green-100 text-green-700" : score >= 50 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
 
+  // OSRM & CIT Checks
+  const isOSRM = match.routing_source === "OSRM";
+  const citPercent = match.score_breakdown?.cit_viability ? Math.round((1 - match.score_breakdown.cit_viability) * 100) : 0;
+  
+  const getCITColor = (pct: number) => {
+    if (pct < 30) return "bg-green-500";
+    if (pct < 70) return "bg-yellow-500";
+    return "bg-red-500";
+  };
+
+  const handleRevealContact = async () => {
+    if (!showPhone) {
+      const logId = await logContactReveal(match.donor_id);
+      if (logId) {
+        toast.info(`Access logged for medical audit. ID: #AUDIT-${logId}`, {
+          icon: <ShieldCheck className="h-4 w-4 text-primary" />,
+          duration: 4000
+        });
+      }
+      setShowPhone(true);
+    } else {
+      setShowPhone(false);
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
@@ -67,6 +93,7 @@ const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: 
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-slate-800 text-lg">{match.name || match.donor_name}</h3>
                 {isTopMatch && <span className="bg-blue-100 text-blue-700 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">Primary Match Recommendation</span>}
+                {isOSRM && <span className="bg-slate-800 text-white text-[9px] font-bold uppercase px-2 py-0.5 rounded-md flex items-center gap-1"><MapPin className="w-2.5 h-2.5"/> OSRM Real Routing</span>}
               </div>
               <p className="text-xs text-slate-500 font-mono">ID: #{match.donor_id.substring(0, 8)}</p>
             </div>
@@ -76,7 +103,28 @@ const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: 
           </div>
         </div>
 
-        {/* Top 5 Critical Metrics - Dynamic Context Integrated */}
+        {/* CIT Viability Clock Visualizer */}
+        {category === 'organ' && (
+          <div className="mb-6 px-1">
+            <div className="flex justify-between items-end mb-2">
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transport Viability Window</p>
+                <p className="text-xs font-bold text-slate-700">{match.travel_time_human || "N/A"} Travel Time</p>
+              </div>
+              <p className={`text-xs font-black ${citPercent > 80 ? 'text-red-600' : 'text-slate-500'}`}>
+                {100 - citPercent}% Buffer Remaining
+              </p>
+            </div>
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${citPercent}%` }}
+                className={`h-full ${getCITColor(citPercent)} transition-colors duration-1000`}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 py-4 border-y border-slate-50">
           <MetricBadge 
             label={category === 'blood' ? "Donation Type" : "Matched Organ"} 
@@ -85,9 +133,14 @@ const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: 
             color="text-slate-800 font-black" 
           />
           <MetricBadge label="ABO Alignment" value={match.blood_type} icon={Droplets} />
-          <MetricBadge label="Road Time (~ETT)" value={match.travel_time_human || `${Math.round(match.distance_km/60)}h`} icon={Clock} />
-          <MetricBadge label="True Distance" value={`${match.distance_km?.toFixed(1) || '—'} km`} icon={MapPin} />
-          <MetricBadge label={category === 'blood' ? "Urgency" : "HLA Compatibility"} value={category === 'blood' ? "Routine" : (match.score_breakdown?.hla_compatibility > 0.8 ? "High (6/6)" : "Adequate")} icon={ShieldCheck} />
+          <MetricBadge label={isOSRM ? "Real ETA" : "Est. Road Time"} value={match.travel_time_human || `${Math.round(match.distance_km/60)}h`} icon={Clock} />
+          <MetricBadge label="Road Distance" value={`${match.distance_km?.toFixed(1) || '—'} km`} icon={MapPin} />
+          <MetricBadge 
+             label={category === 'blood' ? "Urgency" : "AI Priority"} 
+             value={category === 'blood' ? "Routine" : (score > 90 ? "Critical Match" : "High Compatibility")} 
+             icon={ShieldCheck} 
+             color={"text-slate-800 font-black"}
+          />
         </div>
 
         <div className="mt-4 flex items-center justify-between">
@@ -101,7 +154,7 @@ const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: 
           
           <div className="flex gap-2">
             <button 
-              onClick={() => setShowPhone(!showPhone)}
+              onClick={handleRevealContact}
               className={`px-3 py-2 rounded-xl border ${showPhone ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'} transition-colors flex items-center justify-center gap-2 min-w-[40px]`}
               title="Reveal Contact Number"
             >
@@ -127,9 +180,16 @@ const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: 
             >
               <div className="flex gap-3">
                 <Info className="h-5 w-5 text-blue-500 shrink-0" />
-                <p className="text-sm text-slate-600 leading-relaxed italic">
-                   {match.ai_explanation || "Clinical verification in progress for this donor profile."}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-600 leading-relaxed italic">
+                    {match.ai_explanation || "Clinical verification in progress for this donor profile."}
+                  </p>
+                  {match.explanation_source === 'llm' && (
+                    <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> Neural Model Justification
+                    </p>
+                  )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -141,22 +201,25 @@ const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: 
 
 // --- Main Page Component ---
 
-export default function ProfessionalMatchingPage() {
+function MatchingDashboardContent() {
+  const searchParams = useSearchParams();
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSimulationMode, setIsSimulationMode] = useState(false);
   
   // 1. Centralized Filter State
-  const [donorType, setDonorType] = useState<"blood" | "organ">("organ");
-  const [organFilter, setOrganFilter] = useState("Kidney");
-  const [bloodFilter, setBloodFilter] = useState("O+");
-  const [urgencyFilter, setUrgencyFilter] = useState("Routine");
+  const [donorType, setDonorType] = useState<"blood" | "organ">((searchParams.get("mode") as any) || "organ");
+  const [organFilter, setOrganFilter] = useState(searchParams.get("organType") || "Kidney");
+  const [bloodFilter, setBloodFilter] = useState(searchParams.get("bloodType") || "O+");
+  const [urgencyFilter, setUrgencyFilter] = useState(searchParams.get("urgency") || "Routine");
+  const [searchRadius, setSearchRadius] = useState<number>(parseInt(searchParams.get("radius") || "50", 10));
   const [searchQuery, setSearchQuery] = useState("");
   
   const [matches, setMatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filterStats, setFilterStats] = useState<any>(null);
 
-  // 2. Filter Trigger Logic & Backend Integration
+  // 2. Production Fetch Logic (Remove Simulation)
   useEffect(() => {
     const fetchMatches = async () => {
       const urgencyMap: Record<string, string> = {
@@ -165,12 +228,11 @@ export default function ProfessionalMatchingPage() {
         "Emergency": "critical"
       };
 
-      // 🛑 FIX: Use integrated proxy to communicate with Clinical AI Service
-      const AI_ENGINE_URL = "/api/backend";
-
       setIsLoading(true);
+      setIsSimulationMode(false);
+      
       try {
-        const response = await fetch(`${AI_ENGINE_URL}/api/match/find`, {
+        const response = await fetch("/api/backend/api/match/find", {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({
@@ -179,87 +241,75 @@ export default function ProfessionalMatchingPage() {
              patient_blood_type: bloodFilter,
              urgency_level: urgencyMap[urgencyFilter] || "medium",
              donor_type: donorType,
-             max_results: 10
+             max_results: 20
            })
         });
 
-        if (!response.ok) throw new Error("Match Engine Offline");
+        if (!response.ok) throw new Error("Match Engine Service Unavailable");
         
         const data = await response.json();
-        setMatches(data.matches || []);
-        setFilterStats(data.filter_stats);
-      } catch (error) {
-        // --- 🧬 CLINICAL VIRTUAL POOL (High-Fidelity Neural Registry) 🧬 ---
-        const VIRTUAL_POOL = [
-          { name: "Ahmed Khan", city: "Lahore", blood: "B+", organs: ["Kidney"] },
-          { name: "Sana Malik", city: "Karachi", blood: "O+", organs: ["Liver"] },
-          { name: "Zeeshan Ahmed", city: "Islamabad", blood: "A-", organs: ["Cornea"] },
-          { name: "Fatima Ali", city: "Rawalpindi", blood: "B+", organs: ["Kidney"] },
-          { name: "Hamza Sheikh", city: "Faisalabad", blood: "AB+", organs: ["Lungs"] },
-          { name: "Zainab Raza", city: "Quetta", blood: "O-", organs: ["Heart"] }, // Universal Donor
-          { name: "Ali Murtaza", city: "Multan", blood: "B-", organs: ["Kidney"] },
-          { name: "Marium Ijaz", city: "Peshawar", blood: "A+", organs: ["Liver"] },
-          { name: "Hassan Raza", city: "Sialkot", blood: "O+", organs: ["Cornea"] },
-          { name: "Bilal Haider", city: "Hyderabad", blood: "B+", organs: ["Pancreas"] },
-          { name: "Ayesha Noor", city: "Gujranwala", blood: "A-", organs: ["Kidney"] },
-          { name: "Usman Ghani", city: "Lahore", blood: "AB-", organs: ["Lungs"] },
-          { name: "Amna Batool", city: "Karachi", blood: "B+", organs: ["Heart"] },
-          { name: "Saifullah", city: "Islamabad", blood: "O-", organs: ["Kidney"] }, // Universal Donor
-          { name: "Khadija Bibi", city: "Peshawar", blood: "A+", organs: ["Cornea"] },
-          { name: "Ameer Ali", city: "Quetta", blood: "B-", organs: ["Liver"] },
-          { name: "Dua Khan", city: "Multan", blood: "AB+", organs: ["Kidney"] },
-          { name: "Raza Ali", city: "Faisalabad", blood: "O+", organs: ["Heart"] },
-          { name: "Zoya Malik", city: "Lahore", blood: "A-", organs: ["Lungs"] },
-          { name: "Ehsan Jamil", city: "Karachi", blood: "B+", organs: ["Kidney"] }
-        ];
-
-        // Intelligently Filter & Rank the Neural Registry
-        const filtered = VIRTUAL_POOL.filter(d => {
-           const isTypeMatch = donorType === 'organ' ? d.organs.includes(organFilter) : true;
-           // Biological Matrix: Match exact blood type OR use O- as Emergency Alternative
-           const isExactMatch = d.blood === bloodFilter;
-           const isUniversalDonor = d.blood === "O-";
-           return isTypeMatch && (isExactMatch || isUniversalDonor);
-        }).map(d => {
-            const isExact = d.blood === bloodFilter;
-            // Rank exact matches significantly higher than universal donors
-            const baseScore = isExact ? 0.95 : 0.75;
-            
-            return {
-              donor_id: `OPAL-DNR-${Math.floor(Math.random() * 90000 + 10000)}`,
-              name: d.name,
-              blood_type: d.blood,
-              distance_km: Math.floor(Math.random() * 50 + 5),
-              ai_score: urgencyFilter === "Emergency" ? baseScore : baseScore - 0.1,
-              score_breakdown: { 
-                hla_compatibility: isExact ? 0.98 : 0.85, 
-                waitlist_priority: 0.8, 
-                urgency_weight: urgencyFilter === "Emergency" ? 1.0 : 0.5, 
-                cit_viability: 0.95 
-              },
-              ai_explanation: `Surgical Match Verified: ${isExact ? 'Prime biological alignment' : 'Secondary life-saving alternative'} localized for ${d.name}. Bio-matrix score at ${Math.round(baseScore*100)}%.`,
-              explanation_source: "XGBRanker v1.0 Production"
-            };
-        }).sort((a,b) => b.ai_score - a.ai_score);
-
-        setMatches(filtered);
-        setFilterStats({ 
-          passed_clinical_filters: filtered.length, 
-          total_donors_checked: 1542 
+        const radiusFiltered = (data.matches || []).filter((m: any) => m.distance_km <= searchRadius);
+        setMatches(radiusFiltered);
+        setFilterStats({
+          ...data.filter_stats,
+          passed_clinical_filters: radiusFiltered.length,
         });
-        
-        toast.info(`Intelligent Search Results: ${filtered.length} clinically compatible nodes identified.`);
+        toast.success(`Production Engine: ${radiusFiltered.length} verified donors matched.`);
+      } catch (error: any) {
+        setMatches([]);
+        setFilterStats(null);
+        toast.error(`Clinical Engine Error: ${error.message}. Please contact system administrator.`);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchMatches();
-  }, [donorType, organFilter, bloodFilter, urgencyFilter]);
+  }, [donorType, organFilter, bloodFilter, urgencyFilter, searchRadius]);
+
+  const logContactReveal = async (donorId: string) => {
+    try {
+      const resp = await fetch('/api/privacy/log-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ donor_id: donorId, action: 'reveal_contact' })
+      });
+      const data = await resp.json();
+      return data.log_id;
+    } catch (e) {
+      console.error("Compliance Log Failed", e);
+      return null;
+    }
+  };
 
   return (
     <div className={`min-h-screen ${COLORS.background} p-4 md:p-8 font-sans`}>
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
+      <div className="max-w-7xl mx-auto">
+        <AnimatePresence>
+          {isSimulationMode && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start sm:items-center gap-4 shadow-sm"
+            >
+              <div className="h-10 w-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                <AlertCircle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-900 mb-1">
+                  Neural Simulation Engine / Backup Mode
+                </p>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  Live backend connection is establishing. The dashboard has safely fallen back to the Simulation Engine. 
+                  Admin Location is defaulted to <span className="font-black bg-amber-100 px-1 rounded">Lahore / Central Hub</span>. 
+                  Mocked donors have been dynamically generated within your requested <span className="font-black bg-amber-100 px-1 rounded">{searchRadius}km radius</span> to model real-world logistics reach.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <div className="flex flex-col md:flex-row gap-8">
         
         {/* Sidebar Filters */}
         <aside className="w-full md:w-80 flex-shrink-0">
@@ -332,6 +382,26 @@ export default function ProfessionalMatchingPage() {
                       <span className={`text-sm font-bold ${urgencyFilter === u.label ? 'text-blue-700' : 'text-slate-600'}`}>{u.label}</span>
                     </label>
                   ))}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Search Radius Limit</label>
+                  <span className="text-xs font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{searchRadius}km</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="5" 
+                  max="100" 
+                  step="5"
+                  value={searchRadius}
+                  onChange={(e) => setSearchRadius(Number(e.target.value))}
+                  className="w-full h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-blue-600"
+                />
+                <div className="flex justify-between mt-2 text-[9px] font-bold text-slate-400">
+                  <span>5km</span>
+                  <span>100km</span>
                 </div>
               </div>
             </div>
@@ -462,7 +532,7 @@ export default function ProfessionalMatchingPage() {
                        Adjust the blood type or urgency parameters to widen the clinical search scope across the global network.
                     </p>
                     <button 
-                      onClick={() => { setBloodFilter("O+"); setOrganFilter("Kidney"); setUrgencyFilter("Routine"); }}
+                      onClick={() => { setBloodFilter("O+"); setOrganFilter("Kidney"); setUrgencyFilter("Routine"); setSearchRadius(50); }}
                       className="mt-8 px-6 py-2.5 rounded-xl border border-blue-200 text-blue-600 text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-all shadow-sm shadow-blue-50"
                     >
                       Reset Clinical Filters
@@ -473,6 +543,7 @@ export default function ProfessionalMatchingPage() {
             </div>
           )}
         </main>
+        </div>
       </div>
 
       <ProcureModal 
@@ -481,5 +552,13 @@ export default function ProfessionalMatchingPage() {
         onClose={() => setIsModalOpen(false)} 
       />
     </div>
+  );
+}
+
+export default function ProfessionalMatchingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-400">Loading Clinical Connectors...</div>}>
+      <MatchingDashboardContent />
+    </Suspense>
   );
 }

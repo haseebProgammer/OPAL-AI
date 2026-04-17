@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const adminSupabase = getServiceSupabase();
     const { data: existingUsersData } = await adminSupabase.auth.admin.listUsers();
     
-    const exists = existingUsersData?.users.some(u => u.email.toLowerCase() === email.toLowerCase());
+    const exists = existingUsersData?.users.some(u => u.email?.toLowerCase() === email.toLowerCase());
 
     return NextResponse.json({ exists });
   } catch (error: any) {

@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // 5. Welcome Sequence
     try {
-      await sendHospitalWelcomeEmail(data.contact_email, data.admin_name, data.name);
+      await sendHospitalWelcomeEmail(data.contact_email, data.name);
     } catch (e) {
       console.warn("Notification delay: Hospital welcome email failed.", e);
     }

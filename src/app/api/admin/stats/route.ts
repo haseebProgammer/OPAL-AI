@@ -9,8 +9,8 @@ export async function GET() {
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    
-    const isAdmin = user?.user_metadata?.role === "admin" || user?.email === "ranahaseeb9427@gmail.com";
+    const userEmail = user?.email?.toLowerCase();
+    const isAdmin = user?.user_metadata?.role === "admin" || userEmail === "ranahaseeb9427@gmail.com";
     
     if (!isAdmin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -19,7 +19,7 @@ export async function GET() {
     // Unified Stats Logic
     const [donorsTotal, donorsPending, hospitalTotal, hospitalPending, matchesCount] = await Promise.all([
       adminClient.from("donors").select("*", { count: "exact", head: true }),
-      adminClient.from("donors").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      adminClient.from("donors").select("*", { count: "exact", head: true }).eq("approval_status", "pending"),
       adminClient.from("hospitals").select("*", { count: "exact", head: true }),
       adminClient.from("hospitals").select("*", { count: "exact", head: true }).eq("is_verified", false),
       adminClient.from("match_results").select("*", { count: "exact", head: true }),

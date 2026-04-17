@@ -23,15 +23,22 @@ import {
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { EditProfileModal } from "@/components/dashboard/donor/EditProfileModal";
 
 export default function DonorDashboard() {
   const { data: liveDonors, isLoading: donorsLoading } = useBloodDonors();
   const searchParams = useSearchParams();
   const router = useRouter();
+  
+  // 1. ALL State Hooks (MUST be at the very top)
   const [role, setRole] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [sessionUser, setSessionUser] = useState<any>(null);
+  const [isAvailable, setIsAvailable] = useState(false); // Initialized false, updated in effect
+  const [isToggling, setIsToggling] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // 2. All Effect Hooks
   useEffect(() => {
     async function checkRole() {
       const supabase = createClient();
@@ -49,16 +56,22 @@ export default function DonorDashboard() {
     checkRole();
   }, [searchParams]);
 
-  // Use session name first for greeting
-  const displayName = sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.first_name || sessionUser?.email?.split('@')[0] || 'Donor';
-
   useEffect(() => {
     if (searchParams.get("verified") === "true") {
       toast.success("Account verified successfully! Welcome to OPAL-AI.");
     }
   }, [searchParams]);
 
-  // Use first live donor, or mock fallback
+  // Handle donor status initialization
+  useEffect(() => {
+    if (liveDonors && liveDonors.length > 0) {
+      setIsAvailable(liveDonors[0].is_available);
+    }
+  }, [liveDonors]);
+
+  // Derived Values
+  const displayName = sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.first_name || sessionUser?.email?.split('@')[0] || 'Donor';
+
   const donor = (liveDonors && liveDonors.length > 0)
     ? liveDonors[0]
     : {
@@ -78,9 +91,6 @@ export default function DonorDashboard() {
         donor_type: 'blood' as const,
         created_at: mockDonors[0].created_at,
       };
-
-  const [isAvailable, setIsAvailable] = useState(donor.is_available);
-  const [isToggling, setIsToggling] = useState(false);
 
   const handleToggle = async () => {
     setIsToggling(true);
@@ -182,11 +192,22 @@ export default function DonorDashboard() {
               <h3 className="text-xl font-bold font-display">Identity Verified</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">Your account is fully compliant with OPAL-AI security protocols.</p>
            </div>
-           <button className="mt-6 w-full py-3 rounded-xl bg-card border border-border hover:bg-muted font-bold text-xs uppercase tracking-widest transition-colors">
+           <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="mt-6 w-full py-3 rounded-xl bg-card border border-border hover:bg-muted font-bold text-xs uppercase tracking-widest transition-colors"
+           >
               Edit Health Profile
            </button>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal 
+        donor={donor}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdate={() => window.location.reload()} // Simple refresh for now
+      />
 
       {/* SECTION 3: Donation History */}
       <div className="space-y-4">

@@ -9,6 +9,7 @@ import { Lock, Save, ShieldCheck } from "lucide-react";
 import { ResetPasswordSchema, type ResetPasswordValues } from "@/lib/schemas/auth";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 
 export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -85,43 +86,27 @@ export default function ResetPasswordPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground ml-1">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <input
-                        {...register("password")}
-                        type="password"
-                        placeholder="••••••••"
-                        suppressHydrationWarning
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                      />
-                  </div>
-                  {errors.password && (
-                    <p className="text-xs text-red-500 ml-1">{errors.password.message}</p>
-                  )}
-                </div>
+              <div className="space-y-4">
+                <PasswordInput
+                  {...register("password")}
+                  label="New Password"
+                  placeholder="••••••••"
+                  className="bg-white/5 border-white/10 text-white"
+                />
+                {errors.password && (
+                  <p className="text-xs text-red-500 ml-1">{errors.password.message}</p>
+                )}
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground ml-1">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <input
-                        {...register("confirmPassword")}
-                        type="password"
-                        placeholder="••••••••"
-                        suppressHydrationWarning
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                      />
-                  </div>
-                  {errors.confirmPassword && (
-                    <p className="text-xs text-red-500 ml-1">{errors.confirmPassword.message}</p>
-                  )}
-                </div>
+                <PasswordInput
+                  {...register("confirmPassword")}
+                  label="Confirm Password"
+                  placeholder="••••••••"
+                  className="bg-white/5 border-white/10 text-white"
+                />
+                {errors.confirmPassword && (
+                  <p className="text-xs text-red-500 ml-1">{errors.confirmPassword.message}</p>
+                )}
+              </div>
               </div>
 
               <button

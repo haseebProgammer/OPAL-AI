@@ -134,6 +134,7 @@ export interface Donor {
   is_available: boolean;
   cnic: string;
   donor_type: 'blood' | 'organ' | 'both';
+  donating_items?: string;
   verification_status: VerificationStatus;
   
   // Optional clinical metadata
@@ -182,4 +183,12 @@ export interface GlobalStats {
   totalHospitals: number;
   livesSaved: number;
   citiesCovered: number;
+}
+
+export interface DonorRequestFormData {
+  request_type: RequestType;
+  blood_type?: string;
+  organ_type?: string;
+  urgency: UrgencyLevel;
+  city: string;
 }

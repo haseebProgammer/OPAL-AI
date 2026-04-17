@@ -45,6 +45,7 @@ export function mapBloodDonor(row: BloodDonorRow): Donor {
     is_available: !!row.is_available,
     cnic: safeField(row.cnic),
     donor_type: 'blood',
+    donating_items: 'Whole Blood',
     verification_status: row.approval_status || 'pending',
     clinical: {
       hep: safeField(row.hepatitis_status),
@@ -74,6 +75,7 @@ export function mapOrganDonor(row: OrganDonorRow): Donor {
     is_available: !!row.is_available,
     cnic: safeField(row.cnic),
     donor_type: 'organ',
+    donating_items: organs.join(', '),
     verification_status: row.approval_status || 'pending',
     clinical: {
       organs,

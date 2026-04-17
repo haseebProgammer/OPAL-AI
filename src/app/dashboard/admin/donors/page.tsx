@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, 
@@ -25,8 +25,25 @@ import {
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Donor } from "@/lib/types";
+import { createClient } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+
+const supabase = createClient();
 
 export default function AdminDonorsPage() {
+  const router = useRouter();
+  
+  // 1. ALL State Hooks (MUST be at the very top)
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
+  const [suspendingDonor, setSuspendingDonor] = useState<{id: string, type: string, currentStatus: boolean} | null>(null);
+  const [suspensionReason, setSuspensionReason] = useState("");
+  const [isSubmittingReason, setIsSubmittingReason] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCity, setSelectedCity] = useState("all");
+  const [selectedBlood, setSelectedBlood] = useState("all");
+
+  // 2. Data Fetching Hooks
   const { data, refetch: refetchDonors } = useQuery({
     queryKey: ['admin_all_donors'],
     queryFn: async () => {
@@ -34,19 +51,49 @@ export default function AdminDonorsPage() {
       if (!res.ok) throw new Error("Failed to fetch donor list");
       return await res.json();
     },
-    refetchInterval: 15000, // Sync every 15s
+    refetchInterval: 15000, 
+    enabled: !!isAuthorized
   });
 
+  // 3. Effect Hooks
+  useEffect(() => {
+    async function verifyIdentity() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const userEmail = user?.email?.toLowerCase();
+        const isMasterAdmin = userEmail === "ranahaseeb9427@gmail.com";
+        const isRoleAdmin = user?.user_metadata?.role === "admin";
+        
+        setIsAuthorized(isMasterAdmin || isRoleAdmin);
+      } catch (err) {
+        setIsAuthorized(false);
+      }
+    }
+    verifyIdentity();
+  }, []);
+
+  // 4. Early Returns (ONLY after all hooks)
+  if (isAuthorized === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] space-y-4">
+        <ShieldCheck className="h-12 w-12 text-red-500" />
+        <h2 className="text-xl font-bold uppercase">Restricted Access</h2>
+        <button onClick={() => router.push("/dashboard")} className="px-6 py-2 bg-muted rounded-xl text-xs font-bold uppercase transition-all">Return</button>
+      </div>
+    );
+  }
+
+  if (isAuthorized === null) return (
+    <div className="flex items-center justify-center h-[70vh]">
+      <Loader2 className="h-10 w-10 text-primary animate-spin" />
+    </div>
+  );
+
+  // 5. Data Processing Logic
   const bloodDonors = data?.bloodDonors;
   const organDonors = data?.organDonors;
   const refetchBlood = refetchDonors;
   const refetchOrgan = refetchDonors;
-  const [selectedDonor, setSelectedDonor] = useState<Donor | null>(null);
-  
-  // Suspension State
-  const [suspendingDonor, setSuspendingDonor] = useState<{id: string, type: string, currentStatus: boolean} | null>(null);
-  const [suspensionReason, setSuspensionReason] = useState("");
-  const [isSubmittingReason, setIsSubmittingReason] = useState(false);
 
   const toggleDonorStatus = async (id: string, type: 'blood' | 'organ', current: boolean, reason?: string) => {
     try {
@@ -60,16 +107,13 @@ export default function AdminDonorsPage() {
       
       if (!res.ok) throw new Error(result.error || "Toggle failed");
       
-      // Show main success toast
       toast.success(current ? "Donor suspended successfully" : "Donor re-activated successfully");
 
-      // Show warning if email failed
       if (result.warning) {
-        console.warn("Email Warning:", result.warning);
-        toast.warning("Status updated but email notification failed. Check server logs.");
+        toast.warning("Status updated but email notification failed.");
       }
 
-      if (type === 'blood') refetchBlood(); else refetchOrgan();
+      refetchDonors();
       setSuspendingDonor(null);
       setSuspensionReason("");
     } catch (e: any) {
@@ -77,24 +121,17 @@ export default function AdminDonorsPage() {
     }
   };
 
-
   const handleToggleClick = (id: string, type: 'blood' | 'organ', current: boolean) => {
     if (current) {
-        // Opening modal to ask for reason before suspending
         setSuspendingDonor({ id, type, currentStatus: current });
     } else {
-        // Just re-activate directly
         toggleDonorStatus(id, type, current);
     }
   };
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCity, setSelectedCity] = useState("all");
-  const [selectedBlood, setSelectedBlood] = useState("all");
-
   const combinedDonors = [
-    ...(bloodDonors || []).map(d => ({ ...d, type: 'blood' as const })),
-    ...(organDonors || []).map(d => ({ ...d, type: 'organ' as const }))
+    ...(bloodDonors || []).map((d: any) => ({ ...d, type: 'blood' as const })),
+    ...(organDonors || []).map((d: any) => ({ ...d, type: 'organ' as const }))
   ].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   // Filter Logic
@@ -321,11 +358,11 @@ export default function AdminDonorsPage() {
                        </div>
                     </div>
 
-                    {selectedDonor.suspension_reason && (
+                    {(selectedDonor as any).suspension_reason && (
                       <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/20">
                          <h5 className="text-[9px] font-black text-destructive uppercase mb-1">Administrative Suspension Reason</h5>
                          <p className="text-xs font-medium text-foreground italic leading-relaxed">
-                            &quot;{selectedDonor.suspension_reason}&quot;
+                            &quot;{(selectedDonor as any).suspension_reason}&quot;
                          </p>
                       </div>
                     )}

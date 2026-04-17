@@ -28,7 +28,7 @@ export default function RequestsPage() {
   const { data: recipients, isLoading: isTableLoading } = useRecipients();
   const createRequestMutation = useCreateRequest();
 
-  const requests = (recipients || []).map((r) => ({
+  const requests = (recipients || []).map((r: any) => ({
     id: r.id,
     type: r.required_organ === 'Whole Blood' ? 'blood' : 'organ',
     blood_type: r.blood_type,
@@ -325,7 +325,7 @@ export default function RequestsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {requests.map((req) => (
+              {requests.map((req: any) => (
                 <tr key={req.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-5 py-3 font-mono text-xs">{req.id}</td>
                   <td className="px-5 py-3 capitalize font-medium">{req.type}</td>

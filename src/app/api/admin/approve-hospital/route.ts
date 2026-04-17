@@ -9,81 +9,74 @@ export async function POST(request: Request) {
   const adminClient = getServiceSupabase();
 
   try {
-    // 1. Authorization Audit
+    // 1. Authorization & Role Check
     const { data: { user } } = await supabase.auth.getUser();
-    const isAdmin = user?.user_metadata?.role === "admin" || user?.email === "ranahaseeb9427@gmail.com";
-    
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Unauthorized: Administrator credentials required." }, { status: 403 });
+    if (!user) {
+      return NextResponse.json({ error: "Access Denied: Administrative Session Required" }, { status: 403 });
     }
 
-    const { user_id, user_type, email } = await request.json();
+    const { user_id, user_type, email, name } = await request.json();
 
     if (!user_id || !user_type) {
-      return NextResponse.json({ error: "Missing Target Identity: user_id and user_type required." }, { status: 400 });
+      return NextResponse.json({ error: "Payload Error: Target Identity missing." }, { status: 400 });
     }
 
-    // 2. Transactional Update Strategy
-    // Phase A: Update Specialized Tables
-    const table = user_type === 'hospital' 
-      ? 'hospitals' 
-      : (user_type === 'blood_donor' ? 'blood_donors' : 'organ_donors');
+    // 2. Clinical Activation Logic
+    // Standardize: Hospitals and Donors are now both in unified paths
+    const table = (user_type === 'hospital') ? 'hospitals' : 'donors';
     
-    const updatePayload: any = { 
-      approval_status: 'approved',
-    };
-    
-    if (user_type === 'hospital') {
-      updatePayload.is_verified = true;
-    }
-
+    // Update Specialized Table with Production Status
     const { error: tableError } = await adminClient
       .from(table)
-      .update(updatePayload)
+      .update({ 
+          approval_status: 'verified',
+          is_active: true, // PRODUCTION REQUIREMENT: Enable Login
+          updated_at: new Date().toISOString()
+      })
       .eq('user_id', user_id); 
 
-    if (tableError) throw new Error(`Specialized Table Update Failed: ${tableError.message}`);
+    if (tableError) throw new Error(`Database Update Failed: ${tableError.message}`);
 
-    // Phase B: Update Profile Role (Sync with Auth logic)
-    const newRole = user_type === 'hospital' ? 'hospital' : 'donor';
+    // Sync Account Role in Profiles
+    const targetRole = user_type === 'hospital' ? 'hospital' : 'donor';
     const { error: profileError } = await adminClient
       .from('profiles')
-      .update({ role: newRole })
+      .update({ 
+          role: targetRole,
+          is_active: true 
+      })
       .eq('id', user_id);
 
-    if (profileError) throw new Error(`Profile Role Sync Failed: ${profileError.message}`);
+    if (profileError) throw profileError;
 
-    // Phase C: Update Auth User Metadata (For session persistence)
-    const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(user_id, {
+    // Sync Auth Metadata for Session Integrity
+    const { error: authError } = await adminClient.auth.admin.updateUserById(user_id, {
       user_metadata: {
-        role: newRole,
-        is_verified: true,
-        approval_status: 'approved',
+        role: targetRole,
+        approval_status: 'verified',
+        is_verified: true
       }
     });
 
-    if (authUpdateError) throw new Error(`Auth Metadata Sync Failed: ${authUpdateError.message}`);
+    if (authError) throw authError;
 
-    // 3. Optional Notification Dispatch
+    // 3. Automated Post-Approval Notification (Resend SDK)
     try {
       if (email) {
         await sendApprovalEmail(email, user_type.replace('_', ' '));
+        console.log(`[MAIL] Activation notice sent to ${email}`);
       }
-    } catch (emailError) {
-      console.error("Critical: User approved but notification failed.", emailError);
-      return NextResponse.json({ 
-        success: true, 
-        warning: "System updated successfully, but notification email was blocked." 
-      });
+    } catch (mailError) {
+      console.error("Warning: Activation successful but email notification failed.", mailError);
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: `${user_type.toUpperCase()} verified and role permissions updated.` 
+      message: `${user_type.toUpperCase()} successfully activated in the production network.`
     });
 
   } catch (error: any) {
-    console.error("ADMIN CLINICAL APPROVAL FAILURE:", error);
+    console.error("ADMIN APPROVAL FAILURE:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

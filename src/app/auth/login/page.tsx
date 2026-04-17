@@ -10,6 +10,7 @@ import { Mail, Lock, LogIn, AlertCircle, Heart, Building2 } from "lucide-react";
 import { LoginSchema, type LoginValues } from "@/lib/schemas/auth";
 import { createClient } from "@/lib/supabase";
 import { toast } from "sonner";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -63,9 +64,17 @@ export default function LoginPage() {
         }
       }
 
-      // 3. Deterministic Redirection
+      // 3. Deterministic Redirection (Master Admin Override)
+      const userEmail = authData.user.email?.toLowerCase();
+      const isSuperAdmin = userEmail === "ranahaseeb9427@gmail.com";
+      
       toast.success("Identity verified. Redirecting...");
       
+      if (isSuperAdmin) {
+        router.replace("/dashboard/admin");
+        return;
+      }
+
       switch (role) {
         case "admin":
           router.replace("/dashboard/admin");
@@ -131,23 +140,16 @@ export default function LoginPage() {
               {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-sm font-bold">Password</label>
-                <Link href="/auth/forgot-password" className="text-xs text-primary font-bold hover:underline">Forgot?</Link>
-              </div>
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <input
-                  {...register("password")}
-                  type="password"
-                  placeholder="••••••••"
-                  suppressHydrationWarning
-                  className="w-full bg-muted/40 border-border rounded-xl py-3.5 pl-11 pr-4 focus:ring-2 focus:ring-primary/50 transition-all outline-none"
-                />
-              </div>
-              {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
+            <PasswordInput
+              {...register("password")}
+              label="Password"
+              placeholder="••••••••"
+              suppressHydrationWarning
+            />
+            <div className="flex justify-end pr-1">
+              <Link href="/auth/forgot-password" size="sm" className="text-xs text-primary font-bold hover:underline">Forgot Password?</Link>
             </div>
+            {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
 
             <button
               disabled={isLoading}

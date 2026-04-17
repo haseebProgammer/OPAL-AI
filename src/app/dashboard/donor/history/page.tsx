@@ -18,12 +18,12 @@ export default function DonorHistoryPage() {
   // Filter match results where status is completed or approved for this specific donor
   const donations = (matches || [])
     .filter(
-      (m) =>
+      (m: any) =>
         m.donor_id === currentDonorId &&
         (m.status === "completed" || m.status === "approved")
     )
     .sort(
-      (a, b) =>
+      (a: any, b: any) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
@@ -67,7 +67,7 @@ export default function DonorHistoryPage() {
           {/* Vertical line */}
           <div className="absolute left-[23px] top-6 bottom-6 w-px bg-border" />
 
-          {donations.map((donation, i) => (
+          {donations.map((donation: any, i: number) => (
             <motion.div
               key={donation.id}
               initial={{ opacity: 0, x: -10 }}

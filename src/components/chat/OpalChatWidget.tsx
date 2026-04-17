@@ -74,12 +74,9 @@ export function OpalChatWidget() {
         return;
       }
 
-      // 2. Metadata Fallback
-      const { data: { session } } = await supabase.auth.getSession();
-      const userRole = session?.user?.user_metadata?.role;
-      if (userRole === "admin" || userRole === "hospital" || userRole === "donor") {
-        setRole(userRole);
-      }
+      // 2. Default to Public (Donor) for all other pages (Landing, etc)
+      // Even if the user is an admin, we show public assistant mode on public pages
+      setRole('donor');
     }
     if (mounted) updateRole();
   }, [pathname, mounted, supabase]);

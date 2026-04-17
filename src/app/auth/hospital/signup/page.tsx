@@ -12,6 +12,7 @@ import {
   Building2, Mail, Lock, Phone, MapPin, Activity, ShieldCheck, CheckCircle, 
   ArrowRight, ArrowLeft, Loader2, ClipboardCheck, Briefcase, FileText, Globe, ShieldAlert
 } from "lucide-react";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 
 export default function HospitalSignupPage() {
   const router = useRouter();
@@ -171,14 +172,16 @@ export default function HospitalSignupPage() {
                     <input {...register("contact_email")} type="email" placeholder="admin@hospital.org" className="w-full bg-muted/40 border-border rounded-xl py-4 px-5 outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold ml-1">Password</label>
-                      <input {...register("password")} type="password" placeholder="••••••••" className="w-full bg-muted/40 border-border rounded-xl py-4 px-5 outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold ml-1">Confirm</label>
-                      <input {...register("confirmPassword")} type="password" placeholder="••••••••" className="w-full bg-muted/40 border-border rounded-xl py-4 px-5 outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
-                    </div>
+                    <PasswordInput
+                      {...register("password")}
+                      label="Password"
+                      placeholder="••••••••"
+                    />
+                    <PasswordInput
+                      {...register("confirmPassword")}
+                      label="Confirm Password"
+                      placeholder="••••••••"
+                    />
                   </div>
                 </motion.div>
               )}
