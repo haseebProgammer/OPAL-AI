@@ -47,6 +47,7 @@ const MetricBadge = ({ label, value, icon: Icon, color = "text-slate-700" }: { l
 
 const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: any, isTopMatch?: boolean, onProcure: (m: any) => void, category: string }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [showPhone, setShowPhone] = useState(false);
   const score = Math.round(match.ai_score * 100);
   const scoreColor = score >= 80 ? "bg-green-100 text-green-700" : score >= 50 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
 
@@ -99,8 +100,13 @@ const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: 
           </button>
           
           <div className="flex gap-2">
-            <button className="p-2 rounded-lg border border-slate-200 text-slate-400 hover:bg-slate-50 transition-colors">
+            <button 
+              onClick={() => setShowPhone(!showPhone)}
+              className={`px-3 py-2 rounded-xl border ${showPhone ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'border-slate-200 text-slate-500 hover:bg-slate-50'} transition-colors flex items-center justify-center gap-2 min-w-[40px]`}
+              title="Reveal Contact Number"
+            >
               <Phone className="h-4 w-4" />
+              {showPhone && <span className="text-xs font-bold tracking-wider">{match.phone || "+92 300 1234567"}</span>}
             </button>
             <button 
               onClick={() => onProcure(match)}
