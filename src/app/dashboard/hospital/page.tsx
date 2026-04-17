@@ -31,7 +31,10 @@ import {
   LayoutDashboard,
   History,
   ShieldCheck,
-  Loader2
+  Loader2,
+  Cpu,
+  Map,
+  ArrowRight
 } from "lucide-react";
 
 export default function HospitalDashboard() {
