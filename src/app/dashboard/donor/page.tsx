@@ -30,11 +30,13 @@ export default function DonorDashboard() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [sessionUser, setSessionUser] = useState<any>(null);
 
   useEffect(() => {
     async function checkRole() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
+      setSessionUser(user);
       
       const userRole = user?.user_metadata?.role;
       const isAdminEmail = user?.email?.toLowerCase() === "ranahaseeb9427@gmail.com";
@@ -46,6 +48,9 @@ export default function DonorDashboard() {
     }
     checkRole();
   }, [searchParams]);
+
+  // Use session name first for greeting
+  const displayName = sessionUser?.user_metadata?.full_name || sessionUser?.user_metadata?.first_name || sessionUser?.email?.split('@')[0] || 'Donor';
 
   useEffect(() => {
     if (searchParams.get("verified") === "true") {
@@ -120,7 +125,7 @@ export default function DonorDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-black font-display tracking-tight text-foreground">
-            Hi, {donor.full_name?.split(' ')[0] || 'Donor'} 👋
+            Hi, {displayName} 👋
           </h1>
           <p className="text-muted-foreground font-medium">
             Manage your status and donation records.
