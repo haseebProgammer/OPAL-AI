@@ -40,11 +40,11 @@ const MetricBadge = ({ label, value, icon: Icon }: { label: string; value: strin
     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-1">
       <Icon className="h-2.5 w-2.5" /> {label}
     </span>
-    <span className="text-sm font-semibold text-slate-700">{value}</span>
+    <span className={`text-sm font-semibold ${color}`}>{value}</span>
   </div>
 );
 
-const MatchCard = ({ match, isTopMatch = false, onProcure }: { match: any, isTopMatch?: boolean, onProcure: (m: any) => void }) => {
+const MatchCard = ({ match, isTopMatch = false, onProcure, category }: { match: any, isTopMatch?: boolean, onProcure: (m: any) => void, category: string }) => {
   const [showDetails, setShowDetails] = useState(false);
   const score = Math.round(match.ai_score * 100);
   const scoreColor = score >= 80 ? "bg-green-100 text-green-700" : score >= 50 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
@@ -70,22 +70,22 @@ const MatchCard = ({ match, isTopMatch = false, onProcure }: { match: any, isTop
             </div>
           </div>
           <div className={`px-3 py-1.5 rounded-full text-xs font-black ${scoreColor} flex items-center gap-1.5`}>
-            <Activity className="h-3 w-3" /> {score}% Match Confidence
+            <Zap className="h-3 w-3" /> {score}% Match Confidence
           </div>
         </div>
 
         {/* Top 5 Critical Metrics - Dynamic Context Integrated */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 py-4 border-y border-slate-50">
           <MetricBadge 
-            label={category === 'BLOOD' ? "Donation Type" : "Matched Organ"} 
-            value={category === 'BLOOD' ? "Whole Blood" : (match.organ_type || "Kidney")} 
-            icon={category === 'BLOOD' ? Droplets : Activity}
-            color="text-primary font-black" 
+            label={category === 'blood' ? "Donation Type" : "Matched Organ"} 
+            value={category === 'blood' ? "Whole Blood" : (match.organ_type || "Kidney")} 
+            icon={category === 'blood' ? Droplets : Activity}
+            color="text-slate-800 font-black" 
           />
           <MetricBadge label="ABO Alignment" value={match.blood_type} icon={Droplets} />
           <MetricBadge label="Road Time (~ETT)" value={match.travel_time_human || `${Math.round(match.distance_km/60)}h`} icon={Clock} />
           <MetricBadge label="True Distance" value={`${match.distance_km?.toFixed(1) || '—'} km`} icon={MapPin} />
-          <MetricBadge label={category === 'BLOOD' ? "Urgency" : "HLA Compatibility"} value={category === 'BLOOD' ? "Routine" : (match.score_breakdown?.hla_compatibility > 0.8 ? "High (6/6)" : "Adequate")} icon={ShieldCheck} />
+          <MetricBadge label={category === 'blood' ? "Urgency" : "HLA Compatibility"} value={category === 'blood' ? "Routine" : (match.score_breakdown?.hla_compatibility > 0.8 ? "High (6/6)" : "Adequate")} icon={ShieldCheck} />
         </div>
 
         <div className="mt-4 flex items-center justify-between">
@@ -401,6 +401,7 @@ export default function ProfessionalMatchingPage() {
                           match={matches[0]} 
                           isTopMatch={true} 
                           onProcure={(m) => { setSelectedMatch(m); setIsModalOpen(true); }}
+                          category={donorType}
                         />
                     </div>
 
@@ -414,6 +415,7 @@ export default function ProfessionalMatchingPage() {
                               key={m.donor_id} 
                               match={m} 
                               onProcure={(med) => { setSelectedMatch(med); setIsModalOpen(true); }}
+                              category={donorType}
                             />
                           ))}
                         </div>
